@@ -5,10 +5,17 @@ description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
     "django>=5.2.4",
+    "django-autocomplete-light>=3.12.1",
+    "django-encrypted-model-fields>=0.6.5",
+    "django-environ>=0.12.0",
     "djangorestframework>=3.16.0",
+    "openai>=1.98.0",
 ]
 
 [dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+]
 lint = [
     "ruff>=0.12.4",
 ]
@@ -41,11 +48,11 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
-    "settings.py",
+    "src/bots/apps.py",
 ]
 
 # Same as Black.
-line-length = 79
+line-length = 120
 indent-width = 4
 
 # Assume Python 3.9

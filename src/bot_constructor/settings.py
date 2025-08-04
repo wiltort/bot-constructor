@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+env = environ.Env()
+environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +35,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "dal",
+    "dal_select2",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -39,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "bots.apps.BotsConfig",
     "rest_framework",
+    "encrypted_model_fields",
 ]
 
 MIDDLEWARE = [
@@ -104,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
 
@@ -132,6 +139,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-AVAILABLE_GPT_API_URLS = {
-    'deepseek': 
-}
+AVAILABLE_GPT_API_URLS = [
+    ('https://api.deepseek.com', 'deepseek'),
+    ('https://api.openai.com', 'openai')
+]
+
+FIELD_ENCRYPTION_KEY = env('FIELD_ENCRYPTION_KEY')
