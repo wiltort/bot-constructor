@@ -78,7 +78,7 @@ class Step(models.Model):
                 type(self).CLEAR,
                 type(self).HELP,
                 type(self).STOP,
-                type(self).CUSTOM
+                type(self).CUSTOM,
             }
 
     title = models.CharField(
@@ -95,20 +95,23 @@ class Step(models.Model):
     is_using_ai = models.BooleanField(
         verbose_name="Использование запроса к AI", default=False
     )
-    is_entry_point = models.BooleanField(verbose_name='Точка входа', default=False)
+    is_entry_point = models.BooleanField(verbose_name="Точка входа", default=False)
     is_fallback = models.BooleanField(verbose_name="шаг по умолчанию", default=False)
     is_end = models.BooleanField(verbose_name="Конец разговора", default=False)
-    on_state = models.CharField(verbose_name="Вызывающее состояние", blank=True, default="")
-    result_state = models.CharField(verbose_name="Выходное сотояние", blank=True, default="")
+    on_state = models.CharField(
+        verbose_name="Вызывающее состояние", blank=True, default=""
+    )
+    result_state = models.CharField(
+        verbose_name="Выходное сотояние", blank=True, default=""
+    )
     template = models.CharField(
-        max_length=2,
-        verbose_name="Шаблон",
-        choices=Template,
-        default=Template.QUESTION
+        max_length=2, verbose_name="Шаблон", choices=Template, default=Template.QUESTION
     )
     priority = models.PositiveSmallIntegerField(verbose_name="Приоритет", default=1)
     message = models.TextField(verbose_name="Текст сообщения", null=True, blank=True)
-    handler_data = models.JSONField(verbose_name="Настройки для хендлеров", default=dict)
+    handler_data = models.JSONField(
+        verbose_name="Настройки для хендлеров", default=dict
+    )
     # тип - словарь с полями:
     # keyboard: list[list[str]] - список кнопок в клавиатуре
     # system: str - Системный промпт
@@ -165,7 +168,7 @@ class Bot(models.Model):
         blank=True,
         db_index=True,
         verbose_name="владелец",
-        related_name="bots"
+        related_name="bots",
     )
     current_scenario = models.ForeignKey(
         Scenario,
@@ -175,11 +178,15 @@ class Bot(models.Model):
         verbose_name="текущий сценарий",
         related_name="bots",
     )
-    is_active = models.BooleanField(blank=True, default=False, verbose_name="активен")
-    is_running = models.BooleanField(default=True, verbose_name="запущен")
+    is_active = models.BooleanField(default=False, verbose_name="активен")
+    is_running = models.BooleanField(default=False, verbose_name="запущен")
     objects = BotManager()
-    last_started = models.DateTimeField(null=True, blank=True, verbose_name='время запуска')
-    last_stopped = models.DateTimeField(null=True, blank=True, verbose_name='время остановки')
+    last_started = models.DateTimeField(
+        null=True, blank=True, verbose_name="время запуска"
+    )
+    last_stopped = models.DateTimeField(
+        null=True, blank=True, verbose_name="время остановки"
+    )
 
     class Meta:
         verbose_name = "бот"
