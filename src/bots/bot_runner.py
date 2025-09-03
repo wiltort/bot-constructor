@@ -197,19 +197,3 @@ async def stop_bot_task(bot_id):
     except Exception as e:
         logger.error(f"Error in stop_bot_task for bot {bot_id}: {e}")
         return False
-
-
-async def restart_bot_task(bot_id):
-    """
-    Асинхронная задача перезапуска Telegram-бота по id.
-    Если не был запущен — просто стартует.
-    :param bot_id: int
-    :return: True если успешно, иначе False
-    """
-    runner = running_bots.get(bot_id)
-    if runner:
-        # Обновить runner, если нужно, например актуальный bot_instance
-        return await runner.restart()
-    else:
-        # Если бота нет в раннерах — просто стартуем
-        return await start_bot_task(bot_id)
