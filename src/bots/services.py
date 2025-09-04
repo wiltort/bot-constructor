@@ -1,4 +1,5 @@
 from celery.result import AsyncResult
+import requests
 from .models import Bot
 from .tasks import start_bot, stop_bot, restart_bot
 import logging
@@ -60,9 +61,21 @@ class BotHealthChecker:
 
     def check_bot_health(self, bot_id):
         """Проверить здоровье конкретного бота"""
-        # Здесь можно добавить проверку через Telegram API
-        # или мониторинг активности бота
-        return {"status": "healthy", "bot_id": bot_id}
+        bot = Bot.objects.get(id=bot_id)
+        token = bot.telegram_token
+        url = f"https://api.telegram.org/bot{token}/getMe"
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200 and response.json().get("ok"):
+                return {"status": "healthy", "bot_id": bot_id}
+            else:
+                return {
+                    "status": "unreachable",
+                    "bot_id": bot_id,
+                    "error": response.json(),
+                }
+        except requests.RequestException as e:
+            return {"status": "unreachable", "bot_id": bot_id, "error": str(e)}
 
     def check_all_bots(self):
         """Проверить всех ботов"""
