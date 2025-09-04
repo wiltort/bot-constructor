@@ -1,10 +1,9 @@
-from .autocomplete import StateAutocomplete
-from django.urls import path
+#from .autocomplete import StateAutocomplete
 
 urlpatterns = [
-    path(
-        'state-autocomplete/',
-        StateAutocomplete.as_view(),
-        name='state-autocomplete',
-    )
+    #path(
+    #    'state-autocomplete/',
+    #    StateAutocomplete.as_view(),
+    #    name='state-autocomplete',
+    #)
 ]

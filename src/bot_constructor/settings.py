@@ -141,11 +141,19 @@ REST_FRAMEWORK = {
 
 AVAILABLE_GPT_API_URLS = [
     ('https://api.deepseek.com', 'deepseek'),
-    ('https://api.openai.com', 'openai')
+    ('https://api.openai.com', 'openai'),
+    ('https://openrouter.ai/api/v1', 'openrouter')
 ]
 
 FIELD_ENCRYPTION_KEY = env('FIELD_ENCRYPTION_KEY')
 
-# Celery settings
-CELERY_BROKER_URL = "redis://localhost:6379"
-CELERY_RESULT_BACKEND = "redis://localhost:6379"
+# Celery Configuration
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Для мониторинга ботов
+BOT_HEALTH_CHECK_INTERVAL = 300  # 5 minutes

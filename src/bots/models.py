@@ -144,7 +144,7 @@ class Bot(models.Model):
     name = models.CharField(max_length=200, verbose_name="имя")
     description = models.TextField(blank=True, null=True, verbose_name="описание")
     gpt_api_key = EncryptedCharField(
-        max_length=200, verbose_name="API ключ", blank=True, null=True
+        max_length=200, verbose_name="API ключ", blank=True, null=True,
     )
     gpt_api_url = models.CharField(
         max_length=200,
@@ -155,6 +155,8 @@ class Bot(models.Model):
     ai_model = models.CharField(
         max_length=200,
         verbose_name="ai модель",
+        null=True,
+        default='',
     )
     telegram_token = EncryptedCharField(
         max_length=200, blank=True, null=True, verbose_name="телеграм токен"
@@ -200,8 +202,9 @@ class Bot(models.Model):
     def clean(self):
         if self.is_active and (
             self.telegram_token is None
-            or self.gpt_api_key is None
+            or (self.gpt_api_key is None or self.gpt_api_key == '')
             or self.current_scenario is None
+            or self.ai_model == ''
         ):
             raise ValidationError(
                 {

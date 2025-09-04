@@ -1,7 +1,5 @@
-from dal import autocomplete
-from .models import State
 
-
+"""
 class StateAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
@@ -13,3 +11,4 @@ class StateAutocomplete(autocomplete.Select2QuerySetView):
         if self.q:
             queryset = queryset.filter(title__icontains=self.q)
         return queryset
+"""
