@@ -4,7 +4,9 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
 # Явно явно использовать локальный venv в директории проекта (.venv)
-ENV UV_VENV_IN_PLACE=1
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
 # Не копируйте проект до установки зависимостей (для слоёв)
 COPY pyproject.toml uv.lock ./
@@ -21,11 +23,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 # Только теперь включаем venv в PATH (чтобы всё работало в интерактиве и docker exec)
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/Scripts:$PATH"
 
-EXPOSE 8000
 
 ENTRYPOINT []
+EXPOSE 8000
 
 # Django
 #CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
