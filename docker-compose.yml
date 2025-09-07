@@ -1,13 +1,10 @@
 services:
   web:
     build: .
-    command: python src/manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
     ports:
       - "8000:8000"
     environment:
-      - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
+      - DJANGO_SETTINGS_MODULE=bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
@@ -31,7 +28,7 @@ services:
     volumes:
       - .:/app
     environment:
-      - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
+      - DJANGO_SETTINGS_MODULE=bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
