@@ -28,9 +28,13 @@ ENTRYPOINT []
 EXPOSE 8000
 
 # Django
-CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
 # или FastAPI
 #CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # Для celery сервисов в docker-compose:
 # command: ["celery", "-A", "your_app", "worker", "-l", "info"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+CMD ["/entrypoint.sh"]
+
