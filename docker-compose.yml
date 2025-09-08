@@ -4,18 +4,25 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
+      - DB_NAME=${DB_NAME:-bots_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secure_password_123}
+      - DB_HOST=db
     depends_on:
       - redis
       - db
 
   celery:
     build: .
-    command: celery -A project worker -l info -Q bot_operations
+    command: celery -A bot_constructor worker -l info -Q bot_operations
     volumes:
-      - .:/app
+      - ./src:/app/src
     environment:
+      - PYTHONPATH=/app/src
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
     depends_on:
@@ -24,11 +31,13 @@ services:
 
   celery-beat:
     build: .
-    command: celery -A project beat -l info
+    command: celery -A bot_constructor beat -l info
     volumes:
-      - .:/app
+      - ./src:/app/src
     environment:
-      - DJANGO_SETTINGS_MODULE=bot_constructor.settings
+      - PYTHONPATH=/app/src
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
@@ -42,15 +51,15 @@ services:
       - redis_data:/data
 
   db:
-    image: postgres:13
+    image: postgres:15
     environment:
-      - POSTGRES_DB=project
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=${DB_NAME:-bots_db}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-secure_password_123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "55432:5432"
+      - "5433:5432"
 
 volumes:
   redis_data:
