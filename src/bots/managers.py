@@ -41,8 +41,11 @@ class BotManager(models.Manager):
         return []
 
     def get_all_active_steps(self, bot_id, user=None):
-        bot = self.get_by_id(bot_id, user)
-        if bot and bot.current_scenario:
+        qs = self.filter(pk=bot_id)
+        if user:
+            qs = qs.filter(owner=user)
+        bot = qs.select_related('current_scenario').first()
+        if bot and bot.current_scenario_id:
             return bot.current_scenario.steps.filter(is_active=True)
         return []
 
@@ -52,3 +55,4 @@ class StepManager(models.Manager):
         return self.filter(scenario_id=scenario_id, is_active=True).order_by(
             "priority"
         )
+    

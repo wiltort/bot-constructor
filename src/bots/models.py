@@ -120,7 +120,7 @@ class Step(models.Model):
     # command: str
 
     objects = StepManager()
-
+        
     class Meta:
         verbose_name = "шаг"
         verbose_name_plural = "шаги"
@@ -182,13 +182,14 @@ class Bot(models.Model):
     )
     is_active = models.BooleanField(default=False, verbose_name="активен")
     is_running = models.BooleanField(default=False, verbose_name="запущен")
-    objects = BotManager()
     last_started = models.DateTimeField(
         null=True, blank=True, verbose_name="время запуска"
     )
     last_stopped = models.DateTimeField(
         null=True, blank=True, verbose_name="время остановки"
     )
+
+    objects = BotManager()
 
     class Meta:
         verbose_name = "бот"

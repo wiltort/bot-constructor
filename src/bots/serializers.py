@@ -1,0 +1,110 @@
+from rest_framework import serializers
+from .models import Bot, Step
+
+
+class BotControlSerializer(serializers.Serializer):
+    """Сериализатор для массового управления ботами"""
+
+    bot_ids = serializers.ListField(
+        child=serializers.IntegerField(), min_length=1, max_length=100
+    )
+
+
+class BotStatusSerializer(serializers.ModelSerializer):
+    """Сериализатор статуса бота"""
+
+    steps_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Bot
+        fields = [
+            "id",
+            "name",
+            "is_active",
+            "is_running",
+            "last_started",
+            "last_stopped",
+            "created_at",
+            "updated_at",
+            "steps_count",
+        ]
+
+    def get_steps_count(self, obj):
+        if not obj.current_scenario_id:
+            return 0
+        return obj.objects.get_all_active_steps(obj.current_scenario_id).count()
+
+
+class BotSerializer(serializers.ModelSerializer):
+    """Сериализатор для Bot"""
+
+    status = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Bot
+        fields = [
+            "id",
+            "name",
+            "description",
+            "gpt_api_token",
+            "ai_model",
+            "telegram_token",
+            "is_active",
+            "is_running",
+            "last_started",
+            "last_stopped",
+            "created_at",
+            "updated_at",
+            "status",
+        ]
+        extra_kwargs = {
+            "telegram_token": {"write_only": True},
+            "gpt_api_token": {"write_only": True},
+            "is_running": {"read_only": True},
+            "last_started": {"read_only": True},
+            "last_stopped": {"read_only": True},
+        }
+
+    def get_status(self, obj):
+        return "running" if obj.is_running else "stopped"
+
+    def validate_telegram_token(self, value):
+        """Валидация токена"""
+        if value and ":" not in value:
+            raise serializers.ValidationError(
+                "Некорректный токен Telegram. Ожидается формат <id>:<hash>"
+            )
+        return value
+
+
+class BotStepSerializer(serializers.ModelSerializer):
+    """Сериализатор для BotHandler"""
+
+    scenario_title = serializers.CharField(source="scenario.title", read_only=True)
+    bots_names = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Step
+        fields = [
+            "id",
+            "scenario",  # FK id сценария (можно исключить, если не нужно)
+            "scenario_title",
+            "bots_names",
+            "is_active",
+            "is_using_ai",
+            "is_entry_point",
+            "is_fallback",
+            "is_end",
+            "on_state",
+            "result_state",
+            "template",
+            "priority",
+            "message",
+            "handler_data",
+        ]
+        read_only_fields = ("scenario_title", "bot_name")
+
+    def get_bots_names(self, obj: Step):
+        if not obj.scenario_id:
+            return []
+        return list(obj.scenario.bots.values_list("name", flat=True))
