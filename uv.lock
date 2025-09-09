@@ -66,6 +66,7 @@ dependencies = [
     { name = "django-celery-beat" },
     { name = "django-celery-results" },
     { name = "django-cors-headers" },
+    { name = "django-db-logger" },
     { name = "django-encrypted-model-fields" },
     { name = "django-environ" },
     { name = "djangorestframework" },
@@ -89,6 +90,7 @@ requires-dist = [
     { name = "django-celery-beat", specifier = ">=2.8.1" },
     { name = "django-celery-results", specifier = ">=2.6.0" },
     { name = "django-cors-headers", specifier = ">=4.7.0" },
+    { name = "django-db-logger", specifier = ">=0.1.13" },
     { name = "django-encrypted-model-fields", specifier = ">=0.6.5" },
     { name = "django-environ", specifier = ">=0.12.0" },
     { name = "djangorestframework", specifier = ">=3.16.0" },
@@ -384,6 +386,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/93/6c/16f6cb6064c63074fd5b2bd494eb319afd846236d9c1a6c765946df2c289/django_cors_headers-4.7.0.tar.gz", hash = "sha256:6fdf31bf9c6d6448ba09ef57157db2268d515d94fc5c89a0a1028e1fc03ee52b", size = 21037, upload-time = "2025-02-06T22:15:28.924Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/a2/7bcfff86314bd9dd698180e31ba00604001606efb518a06cca6833a54285/django_cors_headers-4.7.0-py3-none-any.whl", hash = "sha256:f1c125dcd58479fe7a67fe2499c16ee38b81b397463cf025f0e2c42937421070", size = 12794, upload-time = "2025-02-06T22:15:24.341Z" },
+]
+
+[[package]]
+name = "django-db-logger"
+version = "0.1.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/4d/7a599b6c0c5ad63386ffff10b865e5729ba40a1fd49c8b152d71c62f7bb1/django-db-logger-0.1.13.tar.gz", hash = "sha256:a299a08638a741eb0b1d192f2a27eae57ed5118673c2aa916467f2e060c24e72", size = 10243, upload-time = "2023-11-29T09:42:33.261Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/09/44/da602c708b8c12e6603f2e1429b670e2988823b0a194ad1b4bccb344a77e/django_db_logger-0.1.13-py3-none-any.whl", hash = "sha256:7a1741468c4dc5e7f7cb6f06e1981b16cedff81d3d04d8d926c82b814a247133", size = 8439, upload-time = "2023-11-29T09:42:32.049Z" },
 ]
 
 [[package]]
