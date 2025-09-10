@@ -7,6 +7,39 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class BotAdminForm(forms.ModelForm):
+    masked_gpt_api_key = forms.CharField(
+        required=False,
+        label='GPT API ключ',
+        widget=forms.TextInput(attrs={'placeholder': 'Введите новый ключ'})
+    )
+    masked_telegram_token = forms.CharField(
+        required=False,
+        label='Телеграм токен',
+        widget=forms.TextInput(attrs={'placeholder': 'Введите новый токен'})
+    )
+
+    class Meta:
+        model = Bot
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.gpt_api_key:
+            self.fields['masked_gpt_api_key'].initial = '•' * 20
+        if self.instance and self.instance.telegram_token:
+            self.fields['masked_telegram_token'].initial = '•' * 20
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        masked_gpt_api_key = self.cleaned_data.get('masked_gpt_api_key')
+        masked_telegram_token = self.cleaned_data.get('masked_telegram_token')
+        if masked_gpt_api_key and masked_gpt_api_key != '•' * 20:
+            instance.gpt_api_key = masked_gpt_api_key
+        if masked_telegram_token and masked_telegram_token != '•' * 20:
+            instance.telegram_token = masked_telegram_token
+        
+
 @admin.register(Bot)
 class BotAdmin(admin.ModelAdmin):
     list_display = [
@@ -16,8 +49,18 @@ class BotAdmin(admin.ModelAdmin):
         "current_scenario",
         "is_active",
         "is_running",
+        "masked_gpt_api_key",
+        "masked_telegram_token",
     ]
     date_hierarchy = "created_at"
+    readonly_fields = [
+        "is_running",
+        "last_started",
+        "last_stopped",
+        "masked_gpt_api_key",
+        "masked_telegram_token",
+    ]
+
 
 
 class ScenarioAdminForm(forms.ModelForm):
