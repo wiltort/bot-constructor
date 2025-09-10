@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
-from .models import Bot, BotHandler
+from .models import Bot, BotHandler, Step
 from .serializers import (
     BotSerializer,
     BotHandlerSerializer,
@@ -30,7 +30,8 @@ class BotViewSet(viewsets.ModelViewSet):
         """
         Оптимизация queryset с prefetch_related для уменьшения количества запросов к БД
         """
-        return Bot.objects.select_related('scenario').order_by('-created_at')
+        return Bot.objects.get_all_bots_with_steps()
+
     
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
@@ -173,10 +174,9 @@ class BotViewSet(viewsets.ModelViewSet):
             'is_running': bot.is_running,
             'last_started': bot.last_started,
             'last_stopped': bot.last_stopped,
-            'handlers_count': bot.handlers.count(),
-            'active_handlers_count': bot.handlers.filter(is_active=True).count(),
             'created_at': bot.created_at,
-            'updated_at': bot.updated_at
+            'updated_at': bot.updated_at,
+            'steps_count': bot.current_scenario.steps.filter(is_active=True).count(),
         }
         
         return Response(status_data)
@@ -258,11 +258,11 @@ class BotViewSet(viewsets.ModelViewSet):
         Статистика по ботам
         GET /api/bots/summary/
         """
-        total_bots = TelegramBot.objects.count()
-        active_bots = TelegramBot.objects.filter(is_active=True).count()
-        running_bots = TelegramBot.objects.filter(is_running=True).count()
-        total_handlers = BotHandler.objects.count()
-        active_handlers = BotHandler.objects.filter(is_active=True).count()
+        total_bots = Bot.objects.count()
+        active_bots = Bot.objects.get_active_bots()
+        running_bots = Bot.objects.get_running_bots()
+        total_handlers = Step.objects.count()
+        active_handlers = Step.objects.filter(is_active=True).count()
         
         summary_data = {
             'total_bots': total_bots,

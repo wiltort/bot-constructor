@@ -30,9 +30,9 @@ class BotStatusSerializer(serializers.ModelSerializer):
         ]
 
     def get_steps_count(self, obj):
-        if not obj.current_scenario_id:
+        if not obj.current_scenario__id:
             return 0
-        return obj.objects.get_all_active_steps(obj.current_scenario_id).count()
+        return obj.objects.get_all_active_steps(obj.current_scenario__id).count()
 
 
 class BotSerializer(serializers.ModelSerializer):
