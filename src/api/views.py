@@ -4,15 +4,15 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
-from .models import Bot, BotHandler, Step
+from bots.models import Bot, Step
 from .serializers import (
     BotSerializer,
-    BotHandlerSerializer,
+    BotStepSerializer,
     BotControlSerializer,
     BotStatusSerializer
 )
-from .services import BotService
-from .tasks import start_bot, stop_bot, restart_bot
+from bots.services import BotService
+from bots.tasks import start_bot, stop_bot, restart_bot
 import logging
 
 logger = logging.getLogger(__name__)
@@ -213,7 +213,7 @@ class BotViewSet(viewsets.ModelViewSet):
         POST /api/bots/start_all/
         """
         try:
-            from .tasks import start_all_bots
+            from ..bots.tasks import start_all_bots
             result = start_all_bots.delay()
             
             return Response({
@@ -236,7 +236,7 @@ class BotViewSet(viewsets.ModelViewSet):
         POST /api/bots/stop_all/
         """
         try:
-            from .tasks import stop_all_bots
+            from ..bots.tasks import stop_all_bots
             result = stop_all_bots.delay()
             
             return Response({
@@ -259,8 +259,8 @@ class BotViewSet(viewsets.ModelViewSet):
         GET /api/bots/summary/
         """
         total_bots = Bot.objects.count()
-        active_bots = Bot.objects.get_active_bots()
-        running_bots = Bot.objects.get_running_bots()
+        active_bots = Bot.objects.get_active_bots().count()
+        running_bots = Bot.objects.get_running_bots().count()
         total_handlers = Step.objects.count()
         active_handlers = Step.objects.filter(is_active=True).count()
         
@@ -276,7 +276,7 @@ class BotViewSet(viewsets.ModelViewSet):
         }
         
         return Response(summary_data)
-
+'''
 class BotHandlerViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления обработчиками ботов.
@@ -505,3 +505,4 @@ class HealthCheckViewSet(viewsets.ViewSet):
             'checks': checks,
             'timestamp': timezone.now().isoformat()
         }, status=status_code)
+'''

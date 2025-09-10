@@ -4,6 +4,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DEBUG=${DEBUG}
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
@@ -21,6 +22,7 @@ services:
     volumes:
       - ./src:/app/src
     environment:
+      - DEBUG=${DEBUG}
       - PYTHONPATH=/app/src
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
@@ -35,6 +37,7 @@ services:
     volumes:
       - ./src:/app/src
     environment:
+      - DEBUG=${DEBUG}
       - PYTHONPATH=/app/src
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings

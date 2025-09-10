@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Bot, Step
+from bots.models import Bot, Step
 
 
 class BotControlSerializer(serializers.Serializer):
@@ -46,7 +46,7 @@ class BotSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
-            "gpt_api_token",
+            "gpt_api_key",
             "ai_model",
             "telegram_token",
             "is_active",
@@ -59,7 +59,7 @@ class BotSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "telegram_token": {"write_only": True},
-            "gpt_api_token": {"write_only": True},
+            "gpt_api_key": {"write_only": True},
             "is_running": {"read_only": True},
             "last_started": {"read_only": True},
             "last_stopped": {"read_only": True},
