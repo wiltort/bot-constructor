@@ -38,36 +38,52 @@ class BotAdminForm(forms.ModelForm):
             instance.gpt_api_key = masked_gpt_api_key
         if masked_telegram_token and masked_telegram_token != '•' * 20:
             instance.telegram_token = masked_telegram_token
+        if commit:
+            instance.save()
+        return instance
         
 
 @admin.register(Bot)
 class BotAdmin(admin.ModelAdmin):
-    list_display = [
+    form = BotAdminForm
+    fields = (
+        "name",
+        "description",
+        "gpt_api_url",
+        "ai_model",
+        "masked_gpt_api_key",
+        "masked_telegram_token",
+        "created_at",
+        "updated_at",
+        "owner",
+        "current_scenario",
+        "is_active",
+        "last_started",
+        "last_stopped",
+    )
+    list_display = (
         "id",
         "name",
         "created_at",
         "current_scenario",
         "is_active",
         "is_running",
-        "masked_gpt_api_key",
-        "masked_telegram_token",
-    ]
+    )
     date_hierarchy = "created_at"
-    readonly_fields = [
+    readonly_fields = (
         "is_running",
+        "created_at",
+        "updated_at",
         "last_started",
         "last_stopped",
-        "masked_gpt_api_key",
-        "masked_telegram_token",
-    ]
-
+    )
 
 
 class ScenarioAdminForm(forms.ModelForm):
 
     class Meta:
         model = Scenario
-        fields = ["title", "scenario_type"]
+        fields = "__all__"
 
 
 class StepForm(forms.ModelForm):
@@ -85,26 +101,15 @@ class StepInline(admin.TabularInline):
 @admin.register(Scenario)
 class ScenarioAdmin(admin.ModelAdmin):
     form = ScenarioAdminForm
-    list_display = ["id", "title", "owner"]
-    readonly_fields = ["id"]
-    list_display_links = ["title"]
-    fields = ["title", "owner", "default_state_title"]
-    autocomplete_fields = ["owner"]
-    inlines = [StepInline]
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if "step_set" in form.base_fields:
-            form.base_fields["step_set"].widget.forward = ["scenario"]
-        return form
-
-    def save_model(self, request, obj, form, change):
-        obj._default_state_title = (
-            form.cleaned_data.get("default_state_title") or "Default state"
-        )
-        super().save_model(request, obj, form, change)
-
+    list_display = ("id", "title", "owner", "scenario_type")
+    readonly_fields = ("id",)
+    list_display_links = ("title",)
+    fields = ("title", "owner", "scenario_type")
+    autocomplete_fields = ("owner",)
 
 @admin.register(Step)
 class StepAdmin(admin.ModelAdmin):
-    list_display = ["id", "title", "scenario"]
+    list_display = ("id", "title", "scenario", "on_state", "result_state", "is_entry_point", "template", "priority")
+    list_filter = ("scenario", "on_state", "result_state")
+    ordering = ("-is_entrypoint", "is_end", "priority", "on_state")
+
