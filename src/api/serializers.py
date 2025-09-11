@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from bots.models import Bot, Step
+import re
 
 
 class BotControlSerializer(serializers.Serializer):
@@ -102,9 +103,23 @@ class BotStepSerializer(serializers.ModelSerializer):
             "message",
             "handler_data",
         ]
-        read_only_fields = ("scenario_title", "bot_name")
+        read_only_fields = ("scenario_title", "bot_names")
 
     def get_bots_names(self, obj: Step):
         if not obj.scenario_id:
             return []
         return list(obj.scenario.bots.values_list("name", flat=True))
+
+    def validate_handler_data(self, value):
+        filter_exp = value.get("filter_regex")
+        try:
+            pattern = re.compile(value)
+        except re.error as e:
+            raise serializers.ValidationError(
+                "Неверный формат выражения filter_regex"
+            )
+        
+    def validate(self, data):
+        return data
+    
+    def validate_on_state(self)

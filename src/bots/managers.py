@@ -96,3 +96,10 @@ class BotManager(models.Manager):
 class StepManager(models.Manager):
     def for_scenario(self, scenario_id):
         return self.filter(scenario_id=scenario_id, is_active=True).order_by("priority")
+
+    def get_steps(self, bot_id: None):
+        steps = self.select_related("scenario").prefetch_related("scenario__bots")
+        if bot_id:
+            steps.filter(scenario__bots__isnull=False, scenario__bots__id=bot_id)
+        return steps
+    

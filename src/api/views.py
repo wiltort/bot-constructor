@@ -276,25 +276,21 @@ class BotViewSet(viewsets.ModelViewSet):
         }
         
         return Response(summary_data)
-'''
+
 class BotHandlerViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления обработчиками ботов.
     """
-    queryset = BotHandler.objects.all().order_by('bot__name', 'priority')
-    serializer_class = BotHandlerSerializer
+    queryset = Step.objects.all().order_by('scenario__title', 'priority')
+    serializer_class = BotStepSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     def get_queryset(self):
         """
         Фильтрация обработчиков по bot_id если передан параметр
         """
-        queryset = BotHandler.objects.select_related('bot').order_by('bot__name', 'priority')
         bot_id = self.request.query_params.get('bot_id')
-        
-        if bot_id:
-            queryset = queryset.filter(bot_id=bot_id)
-        
+        queryset = Step.objects.get_steps(bot_id)
         return queryset
     
     def perform_create(self, serializer):
@@ -505,4 +501,3 @@ class HealthCheckViewSet(viewsets.ViewSet):
             'checks': checks,
             'timestamp': timezone.now().isoformat()
         }, status=status_code)
-'''
