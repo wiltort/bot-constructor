@@ -110,7 +110,7 @@ class Step(models.Model):
     priority = models.PositiveSmallIntegerField(verbose_name="Приоритет", default=1)
     message = models.TextField(verbose_name="Текст сообщения", null=True, blank=True)
     handler_data = models.JSONField(
-        verbose_name="Настройки для хендлеров", default=dict
+        verbose_name="Настройки для хендлеров", default=dict, blank=True
     )
     # тип - словарь с полями:
     # keyboard: list[list[str]] - список кнопок в клавиатуре

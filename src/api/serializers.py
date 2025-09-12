@@ -122,4 +122,4 @@ class BotStepSerializer(serializers.ModelSerializer):
     def validate(self, data):
         return data
     
-    def validate_on_state(self)
+    # def validate_on_state(self)

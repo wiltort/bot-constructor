@@ -1,6 +1,4 @@
-# from django.test import TestCase
-
-# Create your tests here.
+# tests/test_redis.py
 import redis
 from django.conf import settings
 

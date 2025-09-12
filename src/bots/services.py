@@ -11,10 +11,28 @@ class BotService:
     """Сервис для управления ботами"""
 
     @staticmethod
+    def check_celery_available():
+        """Проверка доступности Celery"""
+        try:
+            # Простая проверка подключения к брокеру
+            from celery import current_app
+            insp = current_app.control.inspect()
+            if insp.ping():
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Celery check failed: {e}")
+            return False
+
+    @staticmethod
     def start_bot(bot_id):
         """Запустить бота"""
+        if not BotService.check_celery_available():
+            logger.error("Celery is not available. Cannot start bot.")
+            return None
         try:
             task = start_bot.delay(bot_id)
+            logger.info(f"Start task created for bot {bot_id}: {task.id}")
             return task.id
         except Exception as e:
             logger.error(f"Error starting bot {bot_id}: {e}")

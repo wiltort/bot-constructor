@@ -213,7 +213,7 @@ class BotViewSet(viewsets.ModelViewSet):
         POST /api/bots/start_all/
         """
         try:
-            from ..bots.tasks import start_all_bots
+            from bots.tasks import start_all_bots
             result = start_all_bots.delay()
             
             return Response({
