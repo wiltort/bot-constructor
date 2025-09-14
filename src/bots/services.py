@@ -49,7 +49,8 @@ class BotService:
     def stop_bot(bot_id):
         """Остановить бота"""
         try:
-            task = stop_bot.delay(bot_id)
+            task = tasks.stop_bot.delay(bot_id)
+            logger.info(f'Stopping bot {bot_id}...')
             return task.id
         except Exception as e:
             logger.error(f"Error stopping bot {bot_id}: {e}")

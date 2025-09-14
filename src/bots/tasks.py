@@ -46,10 +46,7 @@ def stop_bot(bot_id):
         bot = Bot.objects.get(id=bot_id)
 
         # Останавливаем бота
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(stop_bot_task(bot_id))
-        loop.close()
+        result = stop_bot_task(bot_id)
 
         if result:
             logger.info(f"Bot {bot.name} stopped successfully")
