@@ -77,21 +77,21 @@ class DjangoBotRunner:
         except Exception as e:
             logger.error(f"Error initializing bot {self.bot_instance.name}: {e}")
             return False
-        
+
     def _save_status(self, is_running, last_started=None, last_stopped=None):
         """Сохранение статуса бота"""
         update_fields = ["is_running"]
         self.bot_instance.is_running = is_running
-        
+
         if last_started:
             self.bot_instance.last_started = last_started
             update_fields.append("last_started")
         if last_stopped:
             self.bot_instance.last_stopped = last_stopped
             update_fields.append("last_stopped")
-            
+
         self.bot_instance.save(update_fields=update_fields)
-    
+
     def _polling_worker(self):
         """
         Рабочая функция, которая запускается в отдельном потоке
@@ -99,40 +99,39 @@ class DjangoBotRunner:
         """
         try:
             # Создаем новый event loop для этого потока
-            self._loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self._loop)
-            
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+
             # Запускаем асинхронную функцию polling в этом loop
-            self._loop.run_until_complete(self._run_polling_async())
+            self.loop.run_until_complete(self._run_polling_async())
         except Exception as e:
-            logger.error(f"Polling error in thread: {e}")
+            logger.error(f"Polling error in thread: {e}", exc_info=True)
         finally:
-            if self._loop and not self._loop.is_closed():
-                self._loop.close()
+            if self.loop and not self.loop.is_closed():
+                self.loop.close()
             self.is_running = False
-            # Используйте sync_to_async для сохранения статуса в БД
-            sync_to_async(self._save_status)(False)
+            self._save_status(False)
 
     async def _run_polling_async(self):
         """Асинхронный запуск polling с ручным управлением"""
         try:
             if not self.application:
-                if not await sync_to_async(self.initialize)():  # Используйте sync_to_async для синхронного initialize
+                if not await sync_to_async(self.initialize)():
                     logger.error("Failed to initialize application")
                     return
-            logger.info('Application initialization')
+            logger.info("Application initialization")
             await self.application.initialize()
-            
+
             await self.application.start()
             await self.application.updater.start_polling()
-            
-            logger.info(f"Bot polling started")
-            
+
+            logger.info("Bot polling started")
+
             while self.application.running:
                 await asyncio.sleep(1)
-                                
+
         except asyncio.CancelledError:
-            logger.info(f"Bot polling cancelled")
+            logger.info("Bot polling cancelled")
         except Exception as e:
             logger.error(f"Polling error for bot {e}")
         finally:
@@ -140,7 +139,8 @@ class DjangoBotRunner:
                 logger.info("Polling stoping")
                 if self.application.updater.running:
                     await self.application.updater.stop()
-                await self.application.stop()
+                if self.application.running:
+                    await self.application.stop()
                 await self.application.shutdown()
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
@@ -159,18 +159,20 @@ class DjangoBotRunner:
             self._polling_thread = threading.Thread(
                 target=self._polling_worker,
                 name=f"BotPolling-{self.bot_instance.id}",
-                daemon=True  # Поток завершится с основным процессом
+                daemon=True,  # Поток завершится с основным процессом
             )
             self._polling_thread.start()
             self.is_running = True
-            sync_to_async(self._save_status(True, last_started=timezone.now()))
-            logger.info(f"Bot {self.bot_instance.name} started successfully in thread {self._polling_thread.name}")
+            self._save_status(True, last_started=timezone.now())
+            logger.info(
+                f"Bot {self.bot_instance.name} started successfully in thread {self._polling_thread.name}"
+            )
             return True
 
         except Exception as e:
             logger.error(f"Error starting bot {self.bot_instance.name}: {e}")
             self.is_running = False
-            sync_to_async(self._save_status(False))
+            sync_to_async(self._save_status)(False)
             return False
 
     def stop(self) -> bool:
@@ -180,27 +182,25 @@ class DjangoBotRunner:
         """
         if not self.is_running:
             logger.warning(f"Bot {self.bot_instance.name} is not running")
-            self.bot_instance.is_running = False
-            self.bot_instance.save(update_fields=["is_running"])
+            self._save_status(False)
             return False
 
         try:
-            if self.application:
-                logger.info("Application found")
-                self.application.stop_running()
-                logger.info("Running application stopped")
+            if self.loop and self.loop.is_running():
+                stop_future = asyncio.run_coroutine_threadsafe(
+                    self._stop_async(), self.loop
+                )
+                stop_future.result(timeout=10.0)
+                logger.info('loop is stopped')
 
-                if self.polling_thread and self.polling_thread.is_alive():
-                    self.polling_thread.join(timeout=5.0)
-
-                self.application = None
-
+            if self._polling_thread and self._polling_thread.is_alive():
+                self._polling_thread.join(timeout=5.0)
+                logger.info('thread is closed')
+            
             self.is_running = False
-            self.bot_instance.is_running = False
-            self.bot_instance.last_stopped = timezone.now()
-            self.bot_instance.save(update_fields=["is_running", "last_stopped"])
+            self._save_status(False, last_stopped=timezone.now())
 
-            logger.info(f"Bot {self.bot_instance.name} stopped successfully")
+            logger.info(f"Bot {self.bot_instance.name} stopped succesfully")
             return True
 
         except Exception as e:
@@ -215,6 +215,18 @@ class DjangoBotRunner:
         self.stop()
         self.bot_instance.refresh_from_db()
         return self.start()
+
+    async def _stop_async(self):
+        """Асинхронная процедура остановки."""
+        # Эта корутина будет запущена в целевом event loop
+        logger.info("Async stopping")
+        if self.application:
+            logger.info("app is found")
+            if self.application.updater.running:
+                await self.application.updater.stop()
+            await self.application.stop()
+            await self.application.shutdown()
+            logger.info("done")
 
 
 # Глобальный словарь для хранения запущенных ботов

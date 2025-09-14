@@ -39,11 +39,11 @@ def start_bot(self, bot_id):
             return False
 
 
-@shared_task
-def stop_bot(bot_id):
+@shared_task(bind=True, max_retries=3, queue="bot_operations", default_retry_delay=300)
+def stop_bot(self, bot_id):
     """Celery задача для остановки бота"""
     try:
-        bot = Bot.objects.get(id=bot_id)
+        bot = Bot.objects.get_by_id(bot_id)
 
         # Останавливаем бота
         result = stop_bot_task(bot_id)
