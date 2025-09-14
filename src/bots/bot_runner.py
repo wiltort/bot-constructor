@@ -4,6 +4,7 @@ from django.utils import timezone
 from .models import Bot
 from openai import OpenAI
 from .handlers import HandlerManager
+from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class DjangoBotRunner:
         self.ai_client = None
         self.ai_model = None
 
-    async def initialize(self) -> bool:
+    def initialize(self) -> bool:
         """
         Инициализация приложения Telegram и OpenAI-клиента.
         Добавляет обработчики согласно сценарию.
@@ -53,11 +54,13 @@ class DjangoBotRunner:
             self.application = (
                 Application.builder().token(self.bot_instance.telegram_token).build()
             )
+
             scenario = self.bot_instance.current_scenario
+
             if scenario:
                 handler_manager = HandlerManager()
-                handler_converter = handler_manager.get_converter(scenario)
-                handlers = handler_converter.create_handlers(self)
+                handler_converter = handler_manager.get_converter(scenario)(scenario)
+                handlers = handler_converter.create_handlers(bot_runner=self)
                 if not handlers:
                     raise HandlerInitException(
                         "Error creating handlers (no one has created)"
@@ -71,7 +74,7 @@ class DjangoBotRunner:
             logger.error(f"Error initializing bot {self.bot_instance.name}: {e}")
             return False
 
-    async def start(self) -> bool:
+    def start(self) -> bool:
         """
         Запускает Telegram-бота и отмечает его как активного.
         :return: True если успешно запущен, иначе False
@@ -83,19 +86,19 @@ class DjangoBotRunner:
             return False
 
         if not self.application:
-            if not await self.initialize():
+            if not self.initialize():
                 self.is_running = False
                 self.bot_instance.is_running = False
                 self.bot_instance.save(update_fields=["is_running"])
                 return False
 
         try:
-            await self.application.run_polling()
 
             self.is_running = True
             self.bot_instance.is_running = True
             self.bot_instance.last_started = timezone.now()
             self.bot_instance.save(update_fields=["is_running", "last_started"])
+            self.application.run_polling()
 
             logger.info(f"Bot {self.bot_instance.name} started successfully")
             return True
@@ -159,9 +162,9 @@ def get_bot_runner(bot_id):
     return running_bots.get(bot_id)
 
 
-async def start_bot_task(bot_id):
+def start_bot_task(bot_id):
     """
-    Асинхронный запуск Telegram-бота по id.
+    Запуск Telegram-бота по id.
     :param bot_id: int, id бота
     :return: True если успешно, иначе False
     """
@@ -170,12 +173,12 @@ async def start_bot_task(bot_id):
         logger.warning(f"Start requested for bot {bot_id}, but it's already running.")
         return False
     try:
-        bot = Bot.objects.get(id=bot_id)
-        if not bot.is_active:
-            raise BotStartingError("Bot is not active")
+        bot = Bot.objects.get_by_id(bot_id)
+        if not bot or not bot.is_active:
+            raise BotStartingError("Bot is not active or not found")
         runner = DjangoBotRunner(bot)
         running_bots[bot_id] = runner
-        return await runner.start()
+        return runner.start()
     except Exception as e:
         logger.error(f"Error in start_bot_task for bot {bot_id}: {e}")
         return False

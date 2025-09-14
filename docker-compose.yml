@@ -27,9 +27,15 @@ services:
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
+      - DB_NAME=${DB_NAME:-bots_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secure_password_123}
+      - DB_HOST=db
     depends_on:
+      - web
       - redis
       - db
+    restart: unless-stopped
 
   celery-beat:
     build: .
@@ -42,9 +48,15 @@ services:
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
+      - DB_NAME=${DB_NAME:-bots_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secure_password_123}
+      - DB_HOST=db
     depends_on:
+      - web
       - redis
       - db
+    restart: unless-stopped
 
   redis:
     image: redis:alpine
@@ -52,6 +64,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    restart: unless-stopped
 
   db:
     image: postgres:15

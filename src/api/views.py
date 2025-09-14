@@ -48,13 +48,6 @@ class BotViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Проверка, что бот уже не запущен
-        if bot.is_running:
-            return Response(
-                {'error': 'Бот уже запущен'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
         try:
             # Запускаем задачу Celery
             task_id = BotService.start_bot(bot.id)

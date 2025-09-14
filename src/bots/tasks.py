@@ -7,20 +7,16 @@ from .bot_runner import start_bot_task, stop_bot_task
 logger = get_task_logger(__name__)
 
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True, max_retries=3, queue="bot_operations", default_retry_delay=300)
 def start_bot(self, bot_id):
     """Celery задача для запуска бота"""
     try:
-        bot = Bot.objects.get(id=bot_id)
-
+        bot = Bot.objects.get_by_id(bot_id)
         if not bot.is_active:
             logger.warning(f"Bot {bot.name} is not active, skipping start")
             return False
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(start_bot_task(bot_id))
-        loop.close()
+        logger.info(f"Startin bot {bot.name} (ID: {bot_id})")
+        result = start_bot_task(bot_id)
 
         if result:
             logger.info(f"Bot {bot.name} started successfully")
@@ -34,9 +30,13 @@ def start_bot(self, bot_id):
         logger.error(f"Bot with id {bot_id} not found")
         return False
     except Exception as e:
-        logger.error(f"Error starting bot {bot_id}: {e}")
+        logger.error(f"Error starting bot {bot_id}: {e}", exc_info=True)
         self.retry(countdown=60 * 5, exc=e)
-        return False
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=e, countdown=300)
+        else:
+            logger.critical(f"Max retries exceeded for bot {bot_id}")
+            return False
 
 
 @shared_task
@@ -72,6 +72,7 @@ def restart_bot(bot_id):
     try:
         stop_bot(bot_id)
         import time
+
         time.sleep(1)
         start_bot.delay(bot_id)
         return True

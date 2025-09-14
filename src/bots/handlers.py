@@ -173,6 +173,7 @@ class ConversationConverter(AbstractConverter):
         :param bot_runner: runner бота (используется для доступа к истории и клиенту AI)
         :return: Асинхронная функция для исполнения сообщения
         """
+
         async def step_clear_history(
             update: Update, context: ContextTypes.DEFAULT_TYPE
         ):

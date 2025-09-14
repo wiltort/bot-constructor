@@ -1,7 +1,7 @@
 from celery.result import AsyncResult
 import requests
 from .models import Bot
-from .tasks import start_bot, stop_bot, restart_bot
+from . import tasks
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,8 +14,15 @@ class BotService:
     def check_celery_available():
         """Проверка доступности Celery"""
         try:
+            import redis
+            from django.conf import settings
+
+            # Проверяем подключение к Redis
+            redis_client = redis.from_url(settings.CELERY_BROKER_URL)
+            redis_client.ping()
             # Простая проверка подключения к брокеру
             from celery import current_app
+
             insp = current_app.control.inspect()
             if insp.ping():
                 return True
@@ -31,7 +38,7 @@ class BotService:
             logger.error("Celery is not available. Cannot start bot.")
             return None
         try:
-            task = start_bot.delay(bot_id)
+            task = tasks.start_bot.delay(bot_id)
             logger.info(f"Start task created for bot {bot_id}: {task.id}")
             return task.id
         except Exception as e:

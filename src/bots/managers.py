@@ -1,4 +1,5 @@
 from django.db import models
+from asgiref.sync import sync_to_async
 
 
 class BotManager(models.Manager):
@@ -92,14 +93,21 @@ class BotManager(models.Manager):
             # Посчитаем все шаги этих сценариев
             return Step.objects.filter(scenario_id__in=scenario_ids).count()
 
+    @sync_to_async
+    def async_get_by_id(self, bot_id):
+        return self.get_by_id(bot_id=bot_id)
+
 
 class StepManager(models.Manager):
     def for_scenario(self, scenario_id):
-        return self.filter(scenario_id=scenario_id, is_active=True).order_by("priority")
+        return (
+            self.filter(scenario_id=scenario_id, is_active=True)
+            .order_by("priority")
+            .all()
+        )
 
     def get_steps(self, bot_id: None):
         steps = self.select_related("scenario").prefetch_related("scenario__bots")
         if bot_id:
             steps.filter(scenario__bots__isnull=False, scenario__bots__id=bot_id)
         return steps
-    
