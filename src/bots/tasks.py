@@ -23,8 +23,7 @@ def start_bot(self, bot_id):
             return True
         else:
             logger.error(f"Failed to start bot {bot.name}")
-            self.retry(countdown=60 * 5)
-            return False
+            raise self.retry(countdown=60 * 5)
 
     except Bot.DoesNotExist:
         logger.error(f"Bot with id {bot_id} not found")
@@ -63,7 +62,7 @@ def stop_bot(self, bot_id):
         return False
 
 
-@shared_task
+@shared_task(queue="bot_operations")
 def restart_bot(bot_id):
     """Перезапуск бота"""
     try:

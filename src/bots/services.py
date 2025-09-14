@@ -60,7 +60,7 @@ class BotService:
     def restart_bot(bot_id):
         """Перезапустить бота"""
         try:
-            task = restart_bot.delay(bot_id)
+            task = tasks.restart_bot.delay(bot_id)
             return task.id
         except Exception as e:
             logger.error(f"Error restarting bot {bot_id}: {e}")

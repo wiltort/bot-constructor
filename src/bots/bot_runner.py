@@ -172,7 +172,7 @@ class DjangoBotRunner:
         except Exception as e:
             logger.error(f"Error starting bot {self.bot_instance.name}: {e}")
             self.is_running = False
-            sync_to_async(self._save_status)(False)
+            self._save_status(False)
             return False
 
     def stop(self) -> bool:
@@ -191,12 +191,12 @@ class DjangoBotRunner:
                     self._stop_async(), self.loop
                 )
                 stop_future.result(timeout=10.0)
-                logger.info('loop is stopped')
+                logger.info("loop is stopped")
 
             if self._polling_thread and self._polling_thread.is_alive():
                 self._polling_thread.join(timeout=5.0)
-                logger.info('thread is closed')
-            
+                logger.info("thread is closed")
+
             self.is_running = False
             self._save_status(False, last_stopped=timezone.now())
 
@@ -272,6 +272,10 @@ def stop_bot_task(bot_id):
             running_bots.pop(bot_id, None)
             return result
         logger.warning("Runner not found")
+        bot = Bot.objects.get_by_id(bot_id)
+        if bot:
+            bot.is_running = False
+            bot.save(update_fields=['is_running'])
         return False
     except Exception as e:
         logger.error(f"Error in stop_bot_task for bot {bot_id}: {e}")
