@@ -47,7 +47,10 @@ class BotViewSet(viewsets.ModelViewSet):
                 {'error': 'Бот не активен. Сначала активируйте бота.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+        if bot.is_running:
+            return Response(
+                {'error': 'Бот уже запущен.'}
+            )
         try:
             # Запускаем задачу Celery
             task_id = BotService.start_bot(bot.id)
