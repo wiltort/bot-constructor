@@ -38,7 +38,7 @@ class DjangoBotRunner:
         self.application = None
         self.is_running = False
         self.loop = None
-        self.polling_task = None
+        self._polling_thread = None
         self.history = list()
         self.ai_client = None
         self.ai_model = None
@@ -327,7 +327,7 @@ def restart_bot_task(bot_id):
         old_runner = runner
         
         # Создаем нового runner с обновленными данными
-        bot = Bot.objects.get_by_id(id=bot_id)
+        bot = Bot.objects.get_by_id(bot_id)
         new_runner = DjangoBotRunner(bot)
         running_bots[bot_id] = new_runner
         
