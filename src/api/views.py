@@ -285,7 +285,7 @@ class ScenarioViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class BotHandlerViewSet(viewsets.ModelViewSet):
+class BotStepViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления обработчиками ботов.
     """

@@ -119,6 +119,7 @@ class ScenarioSerializer(serializers.ModelSerializer):
 class BotStepSerializer(serializers.ModelSerializer):
     """Сериализатор для BotHandler"""
 
+    scenario = serializers.PrimaryKeyRelatedField(queryset=Scenario.objects.all())
     scenario_title = serializers.CharField(source="scenario.title", read_only=True)
     bots_names = serializers.SerializerMethodField(read_only=True)
 
@@ -150,12 +151,21 @@ class BotStepSerializer(serializers.ModelSerializer):
 
     def validate_handler_data(self, value):
         filter_exp = value.get("filter_regex")
-        try:
-            pattern = re.compile(value)
-        except re.error as e:
-            raise serializers.ValidationError("Неверный формат выражения filter_regex")
-
-    def validate(self, data):
-        return data
-
-    # def validate_on_state(self)
+        if filter_exp:
+            try:
+                pattern = re.compile(filter_exp)
+                return value
+            except re.error as e:
+                raise serializers.ValidationError(
+                    "Неверный формат выражения filter_regex"
+                )
+        keyboard = value.get("keyboard")
+        if keyboard:
+            if not isinstance(keyboard, list):
+                raise serializers.ValidationError("Неверный формат клавиатуры")
+            for row in keyboard:
+                if not isinstance(row, list):
+                    raise serializers.ValidationError("Неверный формат клавиатуры")
+                for button in row:
+                    if not isinstance(button, str):
+                        raise serializers.ValidationError("Неверный формат клавиатуры")
