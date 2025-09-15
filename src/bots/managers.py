@@ -111,3 +111,9 @@ class StepManager(models.Manager):
         if bot_id:
             steps.filter(scenario__bots__isnull=False, scenario__bots__id=bot_id)
         return steps
+
+
+class ScenarioManager(models.Manager):
+    def get_scenarios_with_bots_and_steps(self):
+        scenarios = self.prefetch_related("bots", "steps")
+        return scenarios

@@ -7,6 +7,7 @@ app_name = 'api'
 router = DefaultRouter()
 
 router.register(r'bots', views.BotViewSet, basename='bot')
+router.register(r'scenarios', views.ScenarioViewSet, basename='scenario')
 
 
 urlpatterns = [

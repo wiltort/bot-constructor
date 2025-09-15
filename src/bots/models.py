@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from encrypted_model_fields.fields import EncryptedCharField
-from .managers import BotManager, StepManager
+from .managers import BotManager, StepManager, ScenarioManager
 
 
 User = get_user_model()
@@ -26,6 +26,8 @@ class Scenario(models.Model):
         db_index=True,
         verbose_name="пользователь",
         related_name="scenarios",
+        blank=True,
+        null=True,
     )
     title = models.CharField(
         max_length=100,
@@ -38,6 +40,8 @@ class Scenario(models.Model):
         default=ScenarioType.CONVERSATION,
         verbose_name="Тип сценария",
     )
+
+    objects = ScenarioManager()
 
     class Meta:
         ordering = ["title"]

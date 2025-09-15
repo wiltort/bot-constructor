@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from bots.models import Bot, Step
+from bots.models import Bot, Scenario, Step
 import re
 
 
@@ -39,6 +39,9 @@ class BotStatusSerializer(serializers.ModelSerializer):
 class BotSerializer(serializers.ModelSerializer):
     """Сериализатор для Bot"""
 
+    current_scenario = serializers.PrimaryKeyRelatedField(
+        queryset=Scenario.objects.all()
+    )
     status = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -50,6 +53,7 @@ class BotSerializer(serializers.ModelSerializer):
             "gpt_api_key",
             "ai_model",
             "telegram_token",
+            "current_scenario",
             "is_active",
             "is_running",
             "last_started",
@@ -59,6 +63,7 @@ class BotSerializer(serializers.ModelSerializer):
             "status",
         ]
         extra_kwargs = {
+            "id": {"read_only": True},
             "telegram_token": {"write_only": True},
             "gpt_api_key": {"write_only": True},
             "is_running": {"read_only": True},
@@ -76,6 +81,39 @@ class BotSerializer(serializers.ModelSerializer):
                 "Некорректный токен Telegram. Ожидается формат <id>:<hash>"
             )
         return value
+
+
+class StepSerializer(serializers.ModelSerializer):
+    """Сериализатор для Step"""
+
+    class Meta:
+        model = Step
+        fields = [
+            "id",
+            "title",
+            "is_active",
+            "is_using_ai",
+            "is_entry_point",
+            "is_fallback",
+            "is_end",
+            "on_state",
+            "result_state",
+            "template",
+            "priority",
+            "message",
+            "handler_data",
+        ]
+
+
+class ScenarioSerializer(serializers.ModelSerializer):
+    """Сериализатор для Scenario"""
+
+    bots = BotSerializer(many=True, read_only=True)
+    steps = StepSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Scenario
+        fields = ["id", "title", "scenario_type", "bots", "steps"]
 
 
 class BotStepSerializer(serializers.ModelSerializer):
@@ -115,11 +153,9 @@ class BotStepSerializer(serializers.ModelSerializer):
         try:
             pattern = re.compile(value)
         except re.error as e:
-            raise serializers.ValidationError(
-                "Неверный формат выражения filter_regex"
-            )
-        
+            raise serializers.ValidationError("Неверный формат выражения filter_regex")
+
     def validate(self, data):
         return data
-    
+
     # def validate_on_state(self)

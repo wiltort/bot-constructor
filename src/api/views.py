@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
-from bots.models import Bot, Step
+from bots.models import Bot, Scenario, Step
 from .serializers import (
     BotSerializer,
     BotStepSerializer,
     BotControlSerializer,
-    BotStatusSerializer
+    ScenarioSerializer,
 )
 from bots.services import BotService
 from bots.tasks import start_bot, stop_bot, restart_bot
@@ -270,6 +270,20 @@ class BotViewSet(viewsets.ModelViewSet):
         }
         
         return Response(summary_data)
+
+
+class ScenarioViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для управления сценариями
+    """
+    queryset = Scenario.objects.all()
+    serializer_class = ScenarioSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Scenario.objects.get_scenarios_with_bots_and_steps()
+        return queryset
+
 
 class BotHandlerViewSet(viewsets.ModelViewSet):
     """
