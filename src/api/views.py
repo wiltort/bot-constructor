@@ -209,13 +209,12 @@ class BotViewSet(viewsets.ModelViewSet):
         POST /api/bots/start_all/
         """
         try:
-            from bots.tasks import start_all_bots
-            result = start_all_bots.delay()
+            result = BotService.start_all()
             
             return Response({
                 'status': 'success',
                 'message': 'Задача запуска всех ботов отправлена',
-                'task_id': result.id
+                'tasks': result
             })
             
         except Exception as e:
@@ -232,13 +231,12 @@ class BotViewSet(viewsets.ModelViewSet):
         POST /api/bots/stop_all/
         """
         try:
-            from ..bots.tasks import stop_all_bots
-            result = stop_all_bots.delay()
+            result = BotService.stop_all()
             
             return Response({
                 'status': 'success',
                 'message': 'Задача остановки всех ботов отправлена',
-                'task_id': result.id
+                'tasks': result
             })
             
         except Exception as e:

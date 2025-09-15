@@ -1,6 +1,5 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
-import asyncio
 from .models import Bot
 from .bot_runner import start_bot_task, stop_bot_task, restart_bot_task
 
@@ -78,32 +77,6 @@ def restart_bot(self, bot_id):
     except Exception as e:
         logger.error(f"Error restarting bot {bot_id}: {e}")
         raise self.retry(countdown=60, exc=e)
-
-
-@shared_task
-def start_all_bots():
-    """Запуск всех активных ботов"""
-    active_bots = Bot.objects.filter(is_active=True, is_running=False)
-    results = []
-
-    for bot in active_bots:
-        result = start_bot.delay(bot.id)
-        results.append((bot.id, result))
-
-    return results
-
-
-@shared_task
-def stop_all_bots():
-    """Остановка всех ботов"""
-    running_bots = Bot.objects.filter(is_running=True)
-    results = []
-
-    for bot in running_bots:
-        result = stop_bot.delay(bot.id)
-        results.append((bot.id, result))
-
-    return results
 
 
 @shared_task

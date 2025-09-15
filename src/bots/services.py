@@ -50,7 +50,7 @@ class BotService:
         """Остановить бота"""
         try:
             task = tasks.stop_bot.delay(bot_id)
-            logger.info(f'Stopping bot {bot_id}...')
+            logger.info(f"Stopping bot {bot_id}...")
             return task.id
         except Exception as e:
             logger.error(f"Error stopping bot {bot_id}: {e}")
@@ -65,6 +65,25 @@ class BotService:
         except Exception as e:
             logger.error(f"Error restarting bot {bot_id}: {e}")
             return None
+
+    @staticmethod
+    def start_all():
+        """Запуск всех активных ботов"""
+        active_bots = Bot.objects.filter(is_active=True)
+        results = {}
+        for bot in active_bots:
+            result = tasks.start_bot.delay(bot.id)
+            results[bot.id] = result.id
+        return results
+    
+    @staticmethod
+    def stop_all():
+        """Остановка всех ботов"""
+        running_bots = Bot.objects.filter(is_running=True)
+        results = {}
+        for bot in running_bots:
+            result = tasks.stop_bot.delay(bot.id)
+            results[bot.id] = result.id
 
     @staticmethod
     def get_task_status(task_id):
