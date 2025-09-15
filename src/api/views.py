@@ -303,36 +303,38 @@ class BotStepViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """
-        Создание обработчика с проверкой уникальности
+        Создание обработчика
         """
-        bot = serializer.validated_data['bot']
-        handler_type = serializer.validated_data['handler_type']
-        
-        # Проверка на уникальность обработчика для бота
-        if BotHandler.objects.filter(bot=bot, handler_type=handler_type).exists():
-            raise serializers.ValidationError(
-                f'Обработчик типа {handler_type} уже существует для этого бота'
-            )
-        
-        serializer.save()
-    
+        is_active = serializer.validated_data.get('is_active', False)
+        instance = serializer.save()
+
+        bots = instance.scenario.bots.all() if hasattr(instance, 'scenario') else list()
+
+        if bots and is_active:
+            for bot in bots:
+                self._maybe_restart_bot(bot)
+
     def perform_update(self, serializer):
         """
         Обновление обработчика с возможной синхронизацией бота
         """
         instance = serializer.save()
-        
+        bots = instance.scenario.bots.all() if hasattr(instance, 'scenario') else list()
         # Если изменилась активность обработчика, перезапускаем бота
-        if 'is_active' in serializer.validated_data:
-            self._maybe_restart_bot(instance.bot)
+        
+        if 'is_active' in serializer.validated_data and bots:
+            for bot in bots:
+                self._maybe_restart_bot(bot)
     
     def perform_destroy(self, instance):
         """
-        Удаление обработчика с возможной синхронизацией бота
+        Удаление обработчика с возможной синхронизацией ботов
         """
-        bot = instance.bot
+        bots = instance.scenario.bots.all() if hasattr(instance, 'scenario') else list()
         super().perform_destroy(instance)
-        self._maybe_restart_bot(bot)
+        if bots:
+            for bot in bots:
+                self._maybe_restart_bot(bot)
     
     def _maybe_restart_bot(self, bot):
         """
@@ -343,7 +345,7 @@ class BotStepViewSet(viewsets.ModelViewSet):
                 # Используем задержку чтобы избежать частых перезапусков
                 import time
                 time.sleep(1)
-                restart_bot.delay(bot.id)
+                BotService.restart_bot(bot_id=bot.id)
                 logger.info(f"Запланирован перезапуск бота {bot.name} после изменения обработчиков")
             except Exception as e:
                 logger.error(f"Ошибка планирования перезапуска бота {bot.id}: {e}")
@@ -352,22 +354,26 @@ class BotStepViewSet(viewsets.ModelViewSet):
     def toggle(self, request, pk=None):
         """
         Включение/выключение обработчика
-        POST /api/handlers/{id}/toggle/
+        POST /api/v1/steps/{id}/toggle/
         """
-        handler = self.get_object()
+        step = self.get_object()
         
         try:
-            handler.is_active = not handler.is_active
-            handler.save()
+            step.is_active = not step.is_active
+            step.save()
             
-            # Перезапускаем бот если он запущен
-            if handler.bot.is_active and handler.bot.is_running:
-                restart_bot.delay(handler.bot.id)
+            bots = step.scenario.bots.all() if hasattr(step, 'scenario') else list()
+            
+            if bots:
+                for bot in bots:
+                    # Перезапускаем бот если он запущен
+                    if bot.is_active and bot.is_running:
+                        BotService.restart_bot(bot_id=bot.id)
             
             return Response({
                 'status': 'success',
-                'message': f'Обработчик {"включен" if handler.is_active else "выключен"}',
-                'is_active': handler.is_active
+                'message': f'Обработчик {"включен" if step.is_active else "выключен"}',
+                'is_active': step.is_active
             })
             
         except Exception as e:
