@@ -136,14 +136,23 @@ class DjangoBotRunner:
             logger.error(f"Polling error for bot {e}")
         finally:
             try:
-                logger.info("Polling stoping")
-                if self.application.updater.running:
-                    await self.application.updater.stop()
-                if self.application.running:
-                    await self.application.stop()
-                await self.application.shutdown()
+                if self.application:
+                    if self.application.updater.running:
+                        await asyncio.wait_for(
+                            self.application.updater.stop(),
+                            timeout=5.0
+                        )
+                    if self.application.running:
+                        await asyncio.wait_for(
+                            self.application.stop(),
+                            timeout=5.0
+                        )
+                    await asyncio.wait_for(
+                        self.application.shutdown(),
+                        timeout=5.0
+                    )
             except Exception as e:
-                logger.error(f"Error during shutdown: {e}")
+                    logger.error(f"Error during shutdown: {e}")
 
     def start(self) -> bool:
         """
@@ -154,12 +163,20 @@ class DjangoBotRunner:
             logger.warning(f"Bot {self.bot_instance.name} is already running")
             self._save_status(True)
             return False
-
+        
+        if self._polling_thread and self._polling_thread.is_alive():
+            logger.warning("Previous bot instance is still stopping, waiting...")
+            self._polling_thread.join(timeout=3.0)
+            if self._polling_thread.is_alive():
+                logger.error("Previous bot instance is still running, cannot start new one")
+                return False
         try:
+            self.application = None
+            self.loop = None
             self._polling_thread = threading.Thread(
                 target=self._polling_worker,
-                name=f"BotPolling-{self.bot_instance.id}",
-                daemon=True,  # Поток завершится с основным процессом
+                name=f"BotPolling-{self.bot_instance.id}-{timezone.now().timestamp()}",
+                daemon=True,
             )
             self._polling_thread.start()
             self.is_running = True
@@ -186,18 +203,28 @@ class DjangoBotRunner:
             return False
 
         try:
-            if self.loop and self.loop.is_running():
+            self.is_running = False
+            try:
                 stop_future = asyncio.run_coroutine_threadsafe(
                     self._stop_async(), self.loop
                 )
                 stop_future.result(timeout=10.0)
-                logger.info("loop is stopped")
+                logger.info("Application stopped via event loop")
+            except Exception as e:
+                logger.warning(f"Could not stop via event loop: {e}")
+                if self.loop and self.loop.is_running:
+                    self.loop.call_soon_threadsafe(self.loop.stop)
 
             if self._polling_thread and self._polling_thread.is_alive():
                 self._polling_thread.join(timeout=5.0)
-                logger.info("thread is closed")
+                if self._polling_thread.is_alive():
+                    logger.warning("Polling thread still alive after timeout")
+                else:
+                    logger.info("Polling thread closed")
 
-            self.is_running = False
+            self.application = None
+            self.loop = None
+
             self._save_status(False, last_stopped=timezone.now())
 
             logger.info(f"Bot {self.bot_instance.name} stopped succesfully")
@@ -205,6 +232,8 @@ class DjangoBotRunner:
 
         except Exception as e:
             logger.error(f"Error stopping bot {self.bot_instance.name}: {e}")
+            self.is_running = False
+            self._save_status(False, last_stopped=timezone.now())
             return False
 
     def restart(self):
@@ -279,4 +308,49 @@ def stop_bot_task(bot_id):
         return False
     except Exception as e:
         logger.error(f"Error in stop_bot_task for bot {bot_id}: {e}")
+        return False
+
+
+def restart_bot_task(bot_id):
+    """
+    Задача перезагрузки Telegram-бота по id.
+    :param bot_id: int
+    :return: True если успешно, иначе False
+    """
+    try:
+        runner = running_bots.get(bot_id)
+        if not runner:
+            logger.warning(f"No runner found for bot {bot_id}, starting new one")
+            return start_bot_task(bot_id)
+        
+        # Сохраняем ссылку на старого runner
+        old_runner = runner
+        
+        # Создаем нового runner с обновленными данными
+        bot = Bot.objects.get_by_id(id=bot_id)
+        new_runner = DjangoBotRunner(bot)
+        running_bots[bot_id] = new_runner
+        
+        # Останавливаем старого runner
+        stop_result = old_runner.stop()
+        
+        if not stop_result:
+            logger.warning(f"Failed to stop old runner for bot {bot_id}")
+        
+        # Даем время на остановку
+        import time
+        time.sleep(2)
+        
+        # Запускаем нового runner
+        start_result = new_runner.start()
+        
+        if start_result:
+            logger.info(f"Bot {bot_id} restarted successfully")
+            return True
+        else:
+            logger.error(f"Failed to restart bot {bot_id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error in restart_bot_task for bot {bot_id}: {e}")
         return False

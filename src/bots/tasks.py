@@ -2,12 +2,12 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 import asyncio
 from .models import Bot
-from .bot_runner import start_bot_task, stop_bot_task
+from .bot_runner import start_bot_task, stop_bot_task, restart_bot_task
 
 logger = get_task_logger(__name__)
 
 
-@shared_task(bind=True, max_retries=3, queue="bot_operations", default_retry_delay=300)
+@shared_task(bind=True, max_retries=3, queue="bot_operations")
 def start_bot(self, bot_id):
     """Celery задача для запуска бота"""
     try:
@@ -23,22 +23,22 @@ def start_bot(self, bot_id):
             return True
         else:
             logger.error(f"Failed to start bot {bot.name}")
-            raise self.retry(countdown=60 * 5)
+            raise self.retry(countdown=60)
 
     except Bot.DoesNotExist:
         logger.error(f"Bot with id {bot_id} not found")
         return False
     except Exception as e:
         logger.error(f"Error starting bot {bot_id}: {e}", exc_info=True)
-        self.retry(countdown=60 * 5, exc=e)
+        self.retry(countdown=60, exc=e)
         if self.request.retries < self.max_retries:
-            raise self.retry(exc=e, countdown=300)
+            raise self.retry(exc=e, countdown=60)
         else:
             logger.critical(f"Max retries exceeded for bot {bot_id}")
             return False
 
 
-@shared_task(bind=True, max_retries=3, queue="bot_operations", default_retry_delay=300)
+@shared_task(bind=True, max_retries=3, queue="bot_operations")
 def stop_bot(self, bot_id):
     """Celery задача для остановки бота"""
     try:
@@ -51,31 +51,33 @@ def stop_bot(self, bot_id):
             logger.info(f"Bot {bot.name} stopped successfully")
         else:
             logger.warning(f"Bot {bot.name} was not running or failed to stop")
-
+            raise self.retry(countdown=60)
         return result
 
-    except Bot.DoesNotExist:
+    except Bot.DoesNotExist as e:
         logger.error(f"Bot with id {bot_id} not found")
-        return False
+        raise self.retry(countdown=60, exc=e)
     except Exception as e:
         logger.error(f"Error stopping bot {bot_id}: {e}")
-        return False
+        raise self.retry(countdown=60, exc=e)
 
 
-@shared_task(queue="bot_operations")
-def restart_bot(bot_id):
+@shared_task(bind=True, max_retries=3, queue="bot_operations")
+def restart_bot(self, bot_id):
     """Перезапуск бота"""
     try:
-        stop_bot(bot_id)
-        import time
+        result = restart_bot_task(bot_id)
+        if result:
+            logger.info(f"Bot {bot_id} restarted successfully")
+            return True
 
-        time.sleep(1)
-        start_bot.delay(bot_id)
-        return True
+        else:
+            logger.error(f"Failed to restart bot {bot_id}")
+            raise self.retry(countdown=60)
 
     except Exception as e:
         logger.error(f"Error restarting bot {bot_id}: {e}")
-        return False
+        raise self.retry(countdown=60, exc=e)
 
 
 @shared_task
