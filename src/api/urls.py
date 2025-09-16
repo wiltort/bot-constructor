@@ -13,4 +13,15 @@ router.register(r'scenarios', views.ScenarioViewSet, basename='scenario')
 urlpatterns = [
     path('v1/', include(router.urls)),
     path('token-auth/', token_views.obtain_auth_token)
+    path('v1/scenarios/<int:scenario_id>/steps/', views.BotStepViewSet.as_view({
+        'post': 'create',
+        'get': 'list'
+    }), name='step-list'),
+    path('v1/scenarios/<int:scenario_id>/steps/<int:pk>/', views.BotStepViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='step-detail'),
 ]
+

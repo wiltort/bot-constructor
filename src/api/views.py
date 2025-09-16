@@ -289,7 +289,6 @@ class BotStepViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления обработчиками ботов.
     """
-    queryset = Step.objects.all().order_by('scenario__title', 'priority')
     serializer_class = BotStepSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
@@ -297,18 +296,24 @@ class BotStepViewSet(viewsets.ModelViewSet):
         """
         Фильтрация обработчиков по bot_id если передан параметр
         """
-        bot_id = self.request.query_params.get('bot_id')
-        queryset = Step.objects.get_steps(bot_id)
-        return queryset
+        scenario_id = self.kwargs.get('scenario_id')
+        scenario = get_object_or_404(Scenario, id=scenario_id)
+        return Step.objects.filter(scenario=scenario).order_by('priority')
+
+    def get_scenario(self):
+        """Получение сценария из URL параметров"""
+        scenario_id = self.kwargs.get('scenario_id')
+        return get_object_or_404(Scenario, id=scenario_id)
     
     def perform_create(self, serializer):
         """
-        Создание обработчика
+        Создание шага с привязкой к сценарию из URL
         """
-        is_active = serializer.validated_data.get('is_active', False)
-        instance = serializer.save()
+        scenario = self.get_scenario()
+        instance = serializer.save(scenario=scenario)
 
-        bots = instance.scenario.bots.all() if hasattr(instance, 'scenario') else list()
+        is_active = serializer.validated_data.get('is_active', False)
+        bots = instance.scenario.bots.all()
 
         if bots and is_active:
             for bot in bots:
@@ -316,10 +321,19 @@ class BotStepViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         """
-        Обновление обработчика с возможной синхронизацией бота
+        Обновление шага с проверкой принадлежности к сценарию
         """
+        instance = self.get_object()
+        scenario = self.get_scenario()
+                
+        if instance.scenario != scenario:
+            return Response(
+                {'error': 'Step does not belong to this scenario'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         instance = serializer.save()
-        bots = instance.scenario.bots.all() if hasattr(instance, 'scenario') else list()
+        bots = instance.scenario.bots.all()
         # Если изменилась активность обработчика, перезапускаем бота
         
         if 'is_active' in serializer.validated_data and bots:
@@ -328,10 +342,19 @@ class BotStepViewSet(viewsets.ModelViewSet):
     
     def perform_destroy(self, instance):
         """
-        Удаление обработчика с возможной синхронизацией ботов
+        Удаление шага с проверкой принадлежности
         """
-        bots = instance.scenario.bots.all() if hasattr(instance, 'scenario') else list()
+        scenario = self.get_scenario()
+        
+        if instance.scenario != scenario:
+            return Response(
+                {'error': 'Step does not belong to this scenario'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        bots = scenario.bots.all()
         super().perform_destroy(instance)
+        
         if bots:
             for bot in bots:
                 self._maybe_restart_bot(bot)
@@ -349,39 +372,7 @@ class BotStepViewSet(viewsets.ModelViewSet):
                 logger.info(f"Запланирован перезапуск бота {bot.name} после изменения обработчиков")
             except Exception as e:
                 logger.error(f"Ошибка планирования перезапуска бота {bot.id}: {e}")
-    
-    @action(detail=True, methods=['post'])
-    def toggle(self, request, pk=None):
-        """
-        Включение/выключение обработчика
-        POST /api/v1/steps/{id}/toggle/
-        """
-        step = self.get_object()
-        
-        try:
-            step.is_active = not step.is_active
-            step.save()
-            
-            bots = step.scenario.bots.all() if hasattr(step, 'scenario') else list()
-            
-            if bots:
-                for bot in bots:
-                    # Перезапускаем бот если он запущен
-                    if bot.is_active and bot.is_running:
-                        BotService.restart_bot(bot_id=bot.id)
-            
-            return Response({
-                'status': 'success',
-                'message': f'Обработчик {"включен" if step.is_active else "выключен"}',
-                'is_active': step.is_active
-            })
-            
-        except Exception as e:
-            logger.error(f"Ошибка переключения обработчика {handler.id}: {e}")
-            return Response(
-                {'error': f'Ошибка переключения обработчика: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+
 
 class BotControlViewSet(viewsets.ViewSet):
     """

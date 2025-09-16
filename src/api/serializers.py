@@ -121,15 +121,14 @@ class BotStepSerializer(serializers.ModelSerializer):
 
     scenario = serializers.PrimaryKeyRelatedField(queryset=Scenario.objects.all())
     scenario_title = serializers.CharField(source="scenario.title", read_only=True)
-    bots_names = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Step
         fields = [
             "id",
+            "title",
             "scenario",  # FK id сценария (можно исключить, если не нужно)
             "scenario_title",
-            "bots_names",
             "is_active",
             "is_using_ai",
             "is_entry_point",
