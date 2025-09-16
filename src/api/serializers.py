@@ -51,6 +51,7 @@ class BotSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "gpt_api_key",
+            "gpt_api_url",
             "ai_model",
             "telegram_token",
             "current_scenario",
@@ -119,7 +120,6 @@ class ScenarioSerializer(serializers.ModelSerializer):
 class BotStepSerializer(serializers.ModelSerializer):
     """Сериализатор для BotHandler"""
 
-    scenario = serializers.PrimaryKeyRelatedField(queryset=Scenario.objects.all())
     scenario_title = serializers.CharField(source="scenario.title", read_only=True)
 
     class Meta:
@@ -127,7 +127,6 @@ class BotStepSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "scenario",  # FK id сценария (можно исключить, если не нужно)
             "scenario_title",
             "is_active",
             "is_using_ai",
@@ -141,7 +140,7 @@ class BotStepSerializer(serializers.ModelSerializer):
             "message",
             "handler_data",
         ]
-        read_only_fields = ("scenario_title", "bot_names")
+        read_only_fields = ("scenario_title",)
 
     def get_bots_names(self, obj: Step):
         if not obj.scenario_id:
@@ -168,3 +167,4 @@ class BotStepSerializer(serializers.ModelSerializer):
                 for button in row:
                     if not isinstance(button, str):
                         raise serializers.ValidationError("Неверный формат клавиатуры")
+        return value

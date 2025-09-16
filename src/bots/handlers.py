@@ -161,9 +161,8 @@ class ConversationConverter(AbstractConverter):
                 if idx not in handler_args["states"]:
                     handler_args["states"][idx] = []
                 handler_args["states"][idx].append(handler)
-
-            conv_handler = ConversationHandler(**handler_args)
-            return [conv_handler]
+        conv_handler = ConversationHandler(**handler_args)
+        return [conv_handler]
 
     def handle_step(self, step: Step, bot_runner):
         """
@@ -191,7 +190,8 @@ class ConversationConverter(AbstractConverter):
                 args["reply_markup"] = ReplyKeyboardMarkup(
                     keyboard, one_time_keyboard=True
                 )
-            await update.message.reply_text(**args)
+            if args:
+                await update.message.reply_text(**args)
 
         async def step_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Отправляет запрос к AI (если бот интегрируется c AI) и отвечает пользователю."""

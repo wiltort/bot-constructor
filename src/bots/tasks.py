@@ -81,7 +81,7 @@ def restart_bot(self, bot_id):
         raise self.retry(countdown=60, exc=e)
 
 
-@shared_task
+@shared_task(queue="bot_operations")
 def check_bots_health():
     """Периодическая проверка здоровья ботов"""
     from .services import BotHealthChecker
@@ -89,14 +89,25 @@ def check_bots_health():
     checker = BotHealthChecker()
     return checker.check_all_bots()
 
-@shared_task
+@shared_task(queue="bot_operations")
 def start_all_bots_on_startup():
-    from .services import BotService
+    bots = Bot.objects.filter(is_active=True)
+    if not bots:
+        return {'status': 'success', 'bots_started': 0, 'bots': 0}
+    count = 0
+    for bot in bots:
+        try:
+            result = start_bot_task(bot.id)
+            if result:
+                count += 1
+            logger.info(f'Bot {bot.id} started')
+        except Exception as e:
+            logger.warning(f'Bot {bot.id} failed to start: {e}')
+    
+        status = 'success' if count == len(bots) else 'error'
+    return {'status': status, 'bots_started': count, 'bots': len(bots)}
 
-    start = BotService()
-    return start.start_all()
-
-@shared_task
+@shared_task(queue="bot_operations")
 def cleanup_old_tasks():
     """
     Очистка старых завершенных задач из брокера.
