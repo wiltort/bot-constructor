@@ -19,6 +19,14 @@ app.conf.beat_schedule = {
         "task": "bots.tasks.cleanup_old_tasks",
         "schedule": 3600.0,
     },
+    "start-bots-on-startup": {
+        "task": "bots.tasks.start_all_bots_on_startup",
+        "schedule": 10,
+        "options": {
+            "expires": 20,
+            "one_off": True,
+        },
+    },
 }
 
 app.conf.timezone = "UTC"

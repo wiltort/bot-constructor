@@ -2,6 +2,8 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from .models import Bot
 from .bot_runner import start_bot_task, stop_bot_task, restart_bot_task
+from django.conf import settings
+
 
 logger = get_task_logger(__name__)
 
@@ -86,3 +88,32 @@ def check_bots_health():
 
     checker = BotHealthChecker()
     return checker.check_all_bots()
+
+@shared_task
+def start_all_bots_on_startup():
+    from .services import BotService
+
+    start = BotService()
+    return start.start_all()
+
+@shared_task
+def cleanup_old_tasks():
+    """
+    Очистка старых завершенных задач из брокера.
+    """
+    try:
+        import redis
+        
+        r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
+        count = 0
+        
+        old_keys = r.keys('celery-task-meta-*')
+        if old_keys:
+            count += r.delete(*old_keys)
+
+        logger.info(f"Очищено задач: {count}")
+        return {'cleaned': count, 'status': 'success'}
+        
+    except Exception as e:
+        logger.error(f"Ошибка очистки задач: {e}")
+        return {'status': 'error', 'error': str(e)}
