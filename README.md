@@ -15,7 +15,7 @@
 ```
 Django + DRF (Web Interface) → Celery (Task Queue) → python-telegram-bot (Bot Runtime)
        ↓                              ↓
- PostgreSQL (Data)           Redis (Broker + Cache)
+ PostgreSQL (Data)           Redis (Broker)
 ```
 
 ## Быстрый старт
