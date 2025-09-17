@@ -40,7 +40,9 @@ class BotSerializer(serializers.ModelSerializer):
     """Сериализатор для Bot"""
 
     current_scenario = serializers.PrimaryKeyRelatedField(
-        queryset=Scenario.objects.all()
+        queryset=Scenario.objects.all(),
+        required=False,
+        allow_null=True
     )
     status = serializers.SerializerMethodField(read_only=True)
 
