@@ -1,7 +1,7 @@
 [project]
 name = "bot-constructor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Система для создания, управления и запуска множества Telegram ботов с веб-интерфейсом и API."
 requires-python = ">=3.12"
 dependencies = [
     "celery>=5.5.3",

@@ -177,8 +177,8 @@ class ConversationConverter(AbstractConverter):
             update: Update, context: ContextTypes.DEFAULT_TYPE
         ):
             """Очищает историю общения с ботом (если шаг - очистка истории)"""
-
-            bot_runner.history = []
+            chat_id = update.effective_chat.id
+            bot_runner.history["chat_id"] = []
 
         async def step_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Отправляет текст сообщения по сценарию и клавиатуру, если она задана."""
@@ -197,10 +197,12 @@ class ConversationConverter(AbstractConverter):
             """Отправляет запрос к AI (если бот интегрируется c AI) и отвечает пользователю."""
             messages = []
             system = step.handler_data.get("system")
+            chat_id = update.effective_chat.id
             if system:
                 messages.append({"role": "system", "content": system})
-            if bot_runner.history:
-                messages.extend(bot_runner.history)
+            history = bot_runner.history.get(chat_id, list())
+            if history:
+                messages.extend(history)
             text = update.message.text
             ai_context = step.handler_data.get("context")
             if ai_context:
@@ -210,13 +212,15 @@ class ConversationConverter(AbstractConverter):
             response = bot_runner.ai_client.chat.completions.create(
                 model=bot_runner.ai_model, messages=messages
             )
-            bot_runner.history.append(question)
-            bot_runner.history.append(
+
+            history.append(question)
+            history.append(
                 {
                     "role": "assistant",
                     "content": response.choices[0].message.content,
                 }
             )
+            bot_runner.history[chat_id] = history
             await self.send_split_message(update, response.choices[0].message.content)
 
         actions = []

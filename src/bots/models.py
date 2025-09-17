@@ -39,6 +39,8 @@ class Scenario(models.Model):
         choices=ScenarioType,
         default=ScenarioType.CONVERSATION,
         verbose_name="Тип сценария",
+        help_text="Тип сценария определяет алгоритм конвертации шагов в код."
+        "'CS' (CONVERSATION) это алгоритм на основе telegram.ext.ConversationHandler."
     )
 
     objects = ScenarioManager()
@@ -100,7 +102,7 @@ class Step(models.Model):
         verbose_name="Использование запроса к AI", default=False
     )
     is_entry_point = models.BooleanField(verbose_name="Точка входа", default=False)
-    is_fallback = models.BooleanField(verbose_name="шаг по умолчанию", default=False)
+    is_fallback = models.BooleanField(verbose_name="Шаг по умолчанию", default=False)
     is_end = models.BooleanField(verbose_name="Конец разговора", default=False)
     on_state = models.CharField(
         verbose_name="Вызывающее состояние", blank=True, default=""
@@ -114,7 +116,17 @@ class Step(models.Model):
     priority = models.PositiveSmallIntegerField(verbose_name="Приоритет", default=1)
     message = models.TextField(verbose_name="Текст сообщения", null=True, blank=True)
     handler_data = models.JSONField(
-        verbose_name="Настройки для хендлеров", default=dict, blank=True
+        verbose_name="Настройки для хендлеров",
+        default=dict,
+        blank=True,
+        help_text='''Формат данных - словарь 
+        {"keyboard": list[list[str]], "system": str, "context": str, "command": str, "filter_regex": str}. 
+        Все ключи необязательны, лишние ключи игнорируются. 
+        - keyboard: список кнопок в клавиатуре,
+        - system: системный промпт для AI модели,
+        - context: дополнительные данные для анализа при обращении к AI,
+        - filter_regex: регулярное выражение для фильтрации хэндлера телеграм,
+        - command: команда, вызывающая соответствующий хэндлер.'''
     )
     # тип - словарь с полями:
     # keyboard: list[list[str]] - список кнопок в клавиатуре

@@ -118,7 +118,7 @@ class ScenarioSerializer(serializers.ModelSerializer):
 
 
 class BotStepSerializer(serializers.ModelSerializer):
-    """Сериализатор для BotHandler"""
+    """Сериализатор для Step"""
 
     scenario_title = serializers.CharField(source="scenario.title", read_only=True)
 

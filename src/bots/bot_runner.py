@@ -39,7 +39,7 @@ class DjangoBotRunner:
         self.is_running = False
         self.loop = None
         self._polling_thread = None
-        self.history = list()
+        self.history = dict()
         self.ai_client = None
         self.ai_model = None
 
