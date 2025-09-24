@@ -1,12 +1,15 @@
-# FastAPI/Django Dockerfile using uv
+# Образ Debian bookworm с предустановленными python3.11 и uv (менеджер пакетов)
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
 WORKDIR /app
 
-# Явно явно использовать локальный venv в директории проекта (.venv)
+
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
+
+# Установка netcat для health checks
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем только зависимости
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -17,24 +20,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Теперь копируем весь проект
 COPY . /app
 
-# Теперь доустановить project dependencies (если депсы внутри проекта)
+# Теперь доустановить project dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
-# Только теперь включаем venv в PATH (чтобы всё работало в интерактиве и docker exec)
+# включаем venv в PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
 ENTRYPOINT []
 EXPOSE 8000
 
-# Django
-# CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
-# или FastAPI
-#CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY entrypoint.sh entrypoint-prod.sh /
+RUN chmod +x /entrypoint.sh /entrypoint-prod.sh
 
-# Для celery сервисов в docker-compose:
-# command: ["celery", "-A", "your_app", "worker", "-l", "info"]
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# По умолчанию для разработки
 CMD ["/entrypoint.sh"]
 

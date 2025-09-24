@@ -1,11 +1,19 @@
 services:
   web:
     build: .
-    command: /entrypoint.sh
+    command: /entrypoint-prod.sh
     ports:
       - "8000:8000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 50s
     environment:
-      - DEBUG=${DEBUG}
+      - DEBUG=0
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
@@ -15,17 +23,19 @@ services:
       - DB_HOST=db
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
       db:
         condition: service_healthy
 
   celery:
     build: .
     command: celery -A bot_constructor worker -l info -Q bot_operations
+    networks:
+      - app-network
     volumes:
       - ./src:/app/src
     environment:
-      - DEBUG=${DEBUG}
+      - DEBUG=0
       - PYTHONPATH=/app/src
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
@@ -43,10 +53,12 @@ services:
   celery-beat:
     build: .
     command: celery -A bot_constructor beat -l info
+    networks:
+      - app-network
     volumes:
       - ./src:/app/src
     environment:
-      - DEBUG=${DEBUG}
+      - DEBUG=0
       - PYTHONPATH=/app/src
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=src.bot_constructor.settings
@@ -65,20 +77,28 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
+    networks:
+      - app-network
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   db:
     image: postgres:15
+    restart: unless-stopped
+    networks:
+      - app-network
     environment:
       - POSTGRES_DB=${DB_NAME:-bots_db}
       - POSTGRES_USER=${DB_USER:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-secure_password_123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-bots_db}"]
       interval: 10s
@@ -89,3 +109,7 @@ services:
 volumes:
   redis_data:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

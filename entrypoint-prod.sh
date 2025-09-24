@@ -20,5 +20,8 @@ echo "Redis started"
 echo "Applying Django migrations..."
 python src/manage.py migrate --noinput
 
-echo "Starting Django development server..."
-python src/manage.py runserver 0.0.0.0:8000
+echo "Collecting static files..."
+python src/manage.py collectstatic --noinput
+
+echo "Starting Gunicorn..."
+gunicorn bot_constructor.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
