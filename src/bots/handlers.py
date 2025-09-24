@@ -59,7 +59,7 @@ class AbstractConverter(ABC):
         self.scenario = scenario
 
     @staticmethod
-    async def send_split_message(update: Update, text: str, max_length: int = 4096):
+    async def send_split_message(update: Update, text: str, max_length: int = 4096, reply_markup=None):
         """
         Отправляет сообщение по частям, если оно превышает лимит Telegram.
 
@@ -68,7 +68,7 @@ class AbstractConverter(ABC):
         :param max_length: Максимально допустимая длина текста
         """
         if len(text) <= max_length:
-            await update.message.reply_text(text)
+            await update.message.reply_text(text=text, reply_markup=reply_markup)
             return
         parts = []
         while text:
@@ -84,8 +84,11 @@ class AbstractConverter(ABC):
             else:
                 parts.append(text)
                 break
-        for part in parts:
-            await update.message.reply_text(part)
+        for i, part in enumerate(parts):
+            if i == len(parts) - 1:
+                await update.message.reply_text(text=part, reply_markup=reply_markup)
+            else:
+                await update.message.reply_text(text=part)
 
     @abstractmethod
     def create_handlers(self, bot_runner):
@@ -178,20 +181,20 @@ class ConversationConverter(AbstractConverter):
         ):
             """Очищает историю общения с ботом (если шаг - очистка истории)"""
             chat_id = update.effective_chat.id
-            bot_runner.history["chat_id"] = []
+            bot_runner.history[chat_id] = []
 
         async def step_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Отправляет текст сообщения по сценарию и клавиатуру, если она задана."""
             args = {}
             if step.message:
                 args["text"] = step.message
-            keyboard = step.handler_data.get("keyboard")
-            if keyboard:
-                args["reply_markup"] = ReplyKeyboardMarkup(
-                    keyboard, one_time_keyboard=True
-                )
-            if args:
-                await update.message.reply_text(**args)
+                keyboard = step.handler_data.get("keyboard")
+                if keyboard:
+                    args["reply_markup"] = ReplyKeyboardMarkup(
+                        keyboard, one_time_keyboard=True
+                    )
+                if args:
+                    await update.message.reply_text(**args)
 
         async def step_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Отправляет запрос к AI (если бот интегрируется c AI) и отвечает пользователю."""
@@ -205,6 +208,13 @@ class ConversationConverter(AbstractConverter):
                 messages.extend(history)
             text = update.message.text
             ai_context = step.handler_data.get("context")
+            keyboard = step.handler_data.get("keyboard")
+            if keyboard:
+                reply_markup = ReplyKeyboardMarkup(
+                    keyboard, one_time_keyboard=True
+                )
+            else:
+                reply_markup = None
             if ai_context:
                 text = f"{text}\nДополнительный контекст: {ai_context}"
             question = {"role": "user", "content": text}
@@ -221,7 +231,7 @@ class ConversationConverter(AbstractConverter):
                 }
             )
             bot_runner.history[chat_id] = history
-            await self.send_split_message(update, response.choices[0].message.content)
+            await self.send_split_message(update, response.choices[0].message.content, reply_markup=reply_markup)
 
         actions = []
         if step.template == step.Template.CLEAR:

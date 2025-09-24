@@ -336,7 +336,7 @@ class BotStepViewSet(viewsets.ModelViewSet):
         bots = instance.scenario.bots.all()
         # Если изменилась активность обработчика, перезапускаем бота
         
-        if 'is_active' in serializer.validated_data and bots:
+        if bots:
             for bot in bots:
                 self._maybe_restart_bot(bot)
     

@@ -15,7 +15,7 @@
 ```
 Django + DRF (Web Interface) → Celery (Task Queue) → python-telegram-bot (Bot Runtime)
        ↓                              ↓
- PostgreSQL (Data)           Redis (Broker + Cache)
+ PostgreSQL (Data)           Redis (Broker)
 ```
 
 ## Быстрый старт
@@ -104,7 +104,6 @@ curl -X POST http://localhost:8000/api/v1/bots/1/start/ \
 2. Авторизуйтесь как суперпользователь
 3. Перейдите в раздел "Bots"
 4. Создайте бота с токеном
-5. Запустите кнопкой "Start"
 
 ### Через API
 ```python
