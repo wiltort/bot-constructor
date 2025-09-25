@@ -20,5 +20,12 @@ echo "Redis started"
 echo "Applying Django migrations..."
 python src/manage.py migrate --noinput
 
+echo "Creating superuser 'root'..."
+DJANGO_SUPERUSER_USERNAME="root" \
+  DJANGO_SUPERUSER_PASSWORD="root" \
+  DJANGO_SUPERUSER_EMAIL="root@example.com" \
+  python src/manage.py createsuperuser --noinput \
+  || echo "Superuser already exists"
+
 echo "Starting Django development server..."
 python src/manage.py runserver 0.0.0.0:8000

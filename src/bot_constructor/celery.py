@@ -1,6 +1,5 @@
 import os
 from celery import Celery
-from celery.signals import worker_ready
 from django.conf import settings
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bot_constructor.settings")
