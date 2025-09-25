@@ -1,5 +1,5 @@
 # Образ Debian bookworm с предустановленными python3.11 и uv (менеджер пакетов)
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS base
 
 WORKDIR /app
 
@@ -30,9 +30,18 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 EXPOSE 8000
 
-COPY entrypoint.sh entrypoint-prod.sh /
-RUN chmod +x /entrypoint.sh /entrypoint-prod.sh
+FROM base AS dev
+# запуск в режиме разработки
 
-# По умолчанию для разработки
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 CMD ["/entrypoint.sh"]
 
+FROM base AS prod
+# запуск в режиме продакшена
+
+COPY entrypoint-prod.sh /entrypoint-prod.sh
+RUN chmod +x /entrypoint-prod.sh
+
+CMD ["/entrypoint-prod.sh"]

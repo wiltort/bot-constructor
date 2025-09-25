@@ -1,7 +1,8 @@
 services:
   web:
-    build: .
-    command: /entrypoint.sh
+    build:
+      context: .
+      target: dev
     ports:
       - "8000:8000"
     environment:

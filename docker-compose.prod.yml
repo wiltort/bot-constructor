@@ -1,6 +1,8 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      target: prod
     ports:
       - "8000:8000"
     networks:
