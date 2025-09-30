@@ -27,7 +27,7 @@ jobs:
       run: |
         REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
         echo "📦 Building image: ${{ env.REGISTRY }}/${REPO_LOWER}:latest"
-        docker build -t ${{ env.REGISTRY }}/${REPO_LOWER}:latest -f Dockerfile bot-constructor
+        docker build -t ${{ env.REGISTRY }}/${REPO_LOWER}:latest -f .
         docker push ${{ env.REGISTRY }}/${REPO_LOWER}:latest
 
     - name: Deploy to VPS
