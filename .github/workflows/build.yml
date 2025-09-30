@@ -24,7 +24,7 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
     
     - name: Build the Docker image
-      run:
+      run: |
         REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
         echo "📦 Building image: ${{ env.REGISTRY }}/${REPO_LOWER}:latest"
         docker build -t ${{ env.REGISTRY }}/${REPO_LOWER}:latest -f Dockerfile bot-constructor
