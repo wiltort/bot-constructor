@@ -23,13 +23,22 @@ jobs:
     - name: Login to GitHub Container Registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
     
-    - name: Build the Docker image
-      run: |
-        REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        echo "📦 Building image: ${{ env.REGISTRY }}/${REPO_LOWER}:latest"
-        docker build -t ${{ env.REGISTRY }}/${REPO_LOWER}:latest -f .
-        docker push ${{ env.REGISTRY }}/${REPO_LOWER}:latest
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+    - name: Build and push the Docker image
+      id: push
+      uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+      with:  
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        
     - name: Deploy to VPS
       uses: appleboy/ssh-action@master
       with:
