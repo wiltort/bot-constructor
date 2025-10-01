@@ -1,10 +1,27 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - static_volume:/app/staticfiles:ro
+    networks:
+      - app-network
+    depends_on:
+      - web
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   web:
     build:
       context: .
       target: prod
-    ports:
-      - "8000:8000"
     networks:
       - app-network
     healthcheck:
@@ -13,8 +30,16 @@ services:
       timeout: 30s
       retries: 5
       start_period: 50s
+    working_dir: /app/src
+    volumes:
+      - static_volume:/app/staticfiles
     environment:
       - DEBUG=0
+      - PYTHONPATH=/app/src
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - SUPERUSER_USERNAME=${SUPERUSER_USERNAME:-admin}
+      - SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD:-ChangeMe123!}
+      - SUPERUSER_EMAIL=${SUPERUSER_EMAIL:-admin@localhost}
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DJANGO_SETTINGS_MODULE=bot_constructor.settings
       - REDIS_URL=redis://redis:6379/0
@@ -22,6 +47,8 @@ services:
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-secure_password_123}
       - DB_HOST=db
+      - USE_X_FORWARDED_HOST=1
+      - SECURE_PROXY_SSL_HEADER=HTTP_X_FORWARDED_PROTO,https
     depends_on:
       redis:
         condition: service_healthy
@@ -76,8 +103,6 @@ services:
 
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
     networks:
       - app-network
     volumes:
@@ -110,6 +135,7 @@ services:
 volumes:
   redis_data:
   postgres_data:
+  static_volume:
 
 networks:
   app-network:
