@@ -157,9 +157,16 @@ REST_FRAMEWORK = {
     ],
 }
 
-CORS_ALLOWED_ORIGINS = ALLOWED_HOSTS
-CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
-
+CSRF_TRUSTED_ORIGINS = [
+    'http://89.104.71.118',
+    'https://89.104.71.118',  # если есть SSL
+    'http://localhost',
+    'http://web:8000',  # внутренний адрес в Docker
+]
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False  # Для доступа JS
+SESSION_COOKIE_HTTPONLY = True
 CORS_ALLOW_CREDENTIALS = True
 
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
