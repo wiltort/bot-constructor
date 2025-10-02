@@ -30,7 +30,23 @@ SECRET_KEY = env("SECRET_KEY", default="secret-key")
 
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1,0.0.0.0").split(",")
 # Application definition
+CSRF_TRUSTED_ORIGINS = [
+    'http://89.104.71.118',
+    'http://localhost',
+    'http://127.0.0.1',
+    'http://0.0.0.0',
+    'http://web:8000',
+]
+# Важные настройки для работы за nginx
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
 
+# Для работы за reverse proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
@@ -157,16 +173,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://89.104.71.118',
-    'https://89.104.71.118',  # если есть SSL
-    'http://localhost',
-    'http://web:8000',  # внутренний адрес в Docker
-]
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = False  # Для доступа JS
-SESSION_COOKIE_HTTPONLY = True
 CORS_ALLOW_CREDENTIALS = True
 
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
@@ -250,14 +256,14 @@ BOT_HEALTH_CHECK_INTERVAL = 300  # 5 minutes
 # Security settings for production
 if not DEBUG:
     SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False  # Поставьте True если есть HTTPS
+    CSRF_COOKIE_SECURE = False     # Поставьте True если есть HTTPS
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    USE_X_FORWARDED_HOST = 1
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "http")  # Исправлено на http
+    USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
