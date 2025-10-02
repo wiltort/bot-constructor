@@ -47,6 +47,18 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
+
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
+# CORS settings
+CORS_ALLOWED_ORIGINS = [
+    "http://89.104.71.118",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+CORS_ALLOW_CREDENTIALS = True
+
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
@@ -173,7 +185,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-CORS_ALLOW_CREDENTIALS = True
 
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://localhost:6379/0")
