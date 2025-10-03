@@ -114,7 +114,9 @@ TEMPLATES = [
         },
     },
 ]
-
+SWAGGER_SETTINGS = {
+    'DEFAULT_API_URL': 'http://89.104.71.118/',
+}
 WSGI_APPLICATION = "bot_constructor.wsgi.application"
 
 
