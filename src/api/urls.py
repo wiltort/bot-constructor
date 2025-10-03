@@ -18,6 +18,7 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    url='http://89.104.71.118',
 )
 
 router = DefaultRouter()
