@@ -121,8 +121,8 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': True,
     'JSON_EDITOR': True,
 }
-WSGI_APPLICATION = "bot_constructor.wsgi.application"
 
+WSGI_APPLICATION = "bot_constructor.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
