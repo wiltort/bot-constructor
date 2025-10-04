@@ -296,12 +296,16 @@ class BotStepViewSet(viewsets.ModelViewSet):
         """
         Фильтрация обработчиков по bot_id если передан параметр
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return Step.objects.none()
         scenario_id = self.kwargs.get('scenario_id')
         scenario = get_object_or_404(Scenario, pk=scenario_id)
         return Step.objects.filter(scenario=scenario).order_by('priority')
 
     def get_scenario(self):
         """Получение сценария из URL параметров"""
+        if getattr(self, 'swagger_fake_view', False):
+            return Scenario.objects.first()
         scenario_id = self.kwargs.get('scenario_id')
         return get_object_or_404(Scenario, id=scenario_id)
     
@@ -309,6 +313,8 @@ class BotStepViewSet(viewsets.ModelViewSet):
         """
         Создание шага с привязкой к сценарию из URL
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return
         scenario = self.get_scenario()
         instance = serializer.save(scenario=scenario)
 
@@ -323,6 +329,8 @@ class BotStepViewSet(viewsets.ModelViewSet):
         """
         Обновление шага с проверкой принадлежности к сценарию
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return
         instance = self.get_object()
         scenario = self.get_scenario()
                 
@@ -344,6 +352,8 @@ class BotStepViewSet(viewsets.ModelViewSet):
         """
         Удаление шага с проверкой принадлежности
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return
         scenario = self.get_scenario()
         
         if instance.scenario != scenario:
@@ -363,6 +373,8 @@ class BotStepViewSet(viewsets.ModelViewSet):
         """
         Перезапуск бота если он запущен и активен
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return
         if bot.is_active and bot.is_running:
             try:
                 # Используем задержку чтобы избежать частых перезапусков
