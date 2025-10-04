@@ -297,7 +297,7 @@ class BotStepViewSet(viewsets.ModelViewSet):
         Фильтрация обработчиков по bot_id если передан параметр
         """
         scenario_id = self.kwargs.get('scenario_id')
-        scenario = get_object_or_404(Scenario, id=scenario_id)
+        scenario = get_object_or_404(Scenario, pk=scenario_id)
         return Step.objects.filter(scenario=scenario).order_by('priority')
 
     def get_scenario(self):
