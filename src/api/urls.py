@@ -9,6 +9,7 @@ from drf_yasg import openapi
 
 app_name = 'api'
 
+
 schema_view = get_schema_view(
     openapi.Info(
         title="Bot Constructor API",
@@ -18,6 +19,7 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    url='http://89.104.71.118',
 )
 
 router = DefaultRouter()
@@ -42,4 +44,3 @@ urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
-

@@ -52,6 +52,7 @@ CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 
 # CORS settings
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://89.104.71.118",
     "http://localhost:8000",
@@ -114,9 +115,14 @@ TEMPLATES = [
         },
     },
 ]
+SWAGGER_SETTINGS = {
+    'DEFAULT_API_URL': 'http://89.104.71.118',
+    'DEFAULT_SCHEME': 'http',
+    'USE_SESSION_AUTH': True,
+    'JSON_EDITOR': True,
+}
 
 WSGI_APPLICATION = "bot_constructor.wsgi.application"
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
