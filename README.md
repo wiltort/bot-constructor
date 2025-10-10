@@ -119,7 +119,7 @@ response = requests.post(
 )
 ```
 
-## 🐳 Docker Команды
+## Docker Команды
 
 ```bash
 # Запуск всех сервисов
@@ -133,7 +133,7 @@ docker-compose exec web uv run src/manage.py migrate
 docker-compose exec web uv run src/manage.py createsuperuser
 ```
 
-## 🛠️ Разработка
+## Разработка
 
 ### Установка для разработки
 ```bash
@@ -141,4 +141,5 @@ pip install uv
 uv sync
 # Зависимости проекта находятся в pyproject.toml в разделе dependencies
 ```
-
+## Демонстрация
+Развернуто на http://89.104.71.118/api/redoc/ 
