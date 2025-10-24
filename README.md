@@ -91,12 +91,6 @@ docker-compose exec uv run manage.py createsuperuser
 ### Примеры ботов:
 [Консультант по услугам](./examples/consultant.md)
 
-```bash
-curl -X POST http://localhost:8000/api/v1/bots/1/start/ \
-  -H "Authorization: Token your-token" \
-  -H "Content-Type: application/json"
-```
-
 ## 🔧 Управление ботами
 
 ### Через веб-интерфейс
@@ -117,6 +111,12 @@ response = requests.post(
     f"{API_URL}/bots/1/start/",
     headers={"Authorization": f"Token {TOKEN}"}
 )
+```
+
+```bash
+curl -X POST http://localhost:8000/api/v1/bots/1/start/ \
+  -H "Authorization: Token your-token" \
+  -H "Content-Type: application/json"
 ```
 
 ## Docker Команды
